@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, Image as ImageIcon, Upload, Trash2, HelpCircle, Check, Loader2 } from 'lucide-react';
 import { PortfolioItem, TattooStyle } from '../types';
 import { uploadImageToDrive, getAccessToken } from '../lib/workspace';
+import { uploadImageToSupabase, isSupabaseConfigured } from '../lib/supabase';
 import { isVideoUrl, getGoogleDriveEmbedUrl } from '../lib/media';
 
 interface VisualElementEditorModalProps {
@@ -133,7 +134,20 @@ export default function VisualElementEditorModal({
           return;
         }
 
-        if (isGoogleConnected) {
+        if (isSupabaseConfigured) {
+          setUploadProgress(language === 'en' ? 'Uploading to Supabase Storage...' : 'Subiendo a Supabase Storage...');
+          try {
+            const publicUrl = await uploadImageToSupabase(base64Str, `cms-${Date.now()}`);
+            setImageUrl(publicUrl);
+            setMediaType(isVideo ? 'video' : 'image');
+            setUploadProgress(language === 'en' ? 'Success! Image saved to Supabase' : '¡Éxito! Imagen guardada en Supabase');
+          } catch (err: any) {
+            console.error('Supabase upload failed', err);
+            setImageUrl(base64Str);
+            setMediaType(isVideo ? 'video' : 'image');
+            setUploadProgress(language === 'en' ? 'Saved as local preview' : 'Guardado como vista previa');
+          }
+        } else if (isGoogleConnected) {
           setUploadProgress(language === 'en' ? 'Uploading to Google Drive...' : 'Subiendo a Google Drive...');
           try {
             const driveUrl = await uploadImageToDrive(base64Str, `hansttoo_${Date.now()}_${file.name}`);
@@ -142,7 +156,6 @@ export default function VisualElementEditorModal({
             setUploadProgress(language === 'en' ? 'Success! Saved to Drive' : '¡Éxito! Guardado en Drive');
           } catch (err: any) {
             console.error('Drive upload failed', err);
-            // Fallback to local Base64
             setImageUrl(base64Str);
             setMediaType(isVideo ? 'video' : 'image');
             setUploadProgress(language === 'en' ? 'Upload failed. Kept as offline base64' : 'Fallo de subida. Guardado como base64 local');
@@ -150,7 +163,7 @@ export default function VisualElementEditorModal({
         } else {
           setImageUrl(base64Str);
           setMediaType(isVideo ? 'video' : 'image');
-          setUploadProgress(language === 'en' ? 'Saved as local base64 (Max 5MB total storage limit)' : 'Guardado como base64 local (Límite 5MB totales)');
+          setUploadProgress(language === 'en' ? 'Saved as local base64' : 'Guardado como base64 local');
         }
         setLoading(false);
         setTimeout(() => setUploadProgress(null), 3000);

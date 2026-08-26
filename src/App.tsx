@@ -162,6 +162,33 @@ export default function App() {
     localStorage.setItem('hans_custom_faqs', JSON.stringify(faqList));
   }, [faqList]);
 
+  // Section Dynamic Reordering System (Move blocks in real time)
+  const [sectionOrder, setSectionOrder] = useState<string[]>(() => {
+    const stored = localStorage.getItem('hans_section_order');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return ['hero', 'about', 'booking', 'portfolio', 'testimonials', 'faq', 'location'];
+  });
+
+  const moveSection = (index: number, direction: 'up' | 'down') => {
+    const newOrder = [...sectionOrder];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newOrder.length) return;
+    const temp = newOrder[index];
+    newOrder[index] = newOrder[targetIndex];
+    newOrder[targetIndex] = temp;
+    setSectionOrder(newOrder);
+    localStorage.setItem('hans_section_order', JSON.stringify(newOrder));
+    showToast(
+      language === 'en' ? 'Section block order updated in real time!' : '¡Orden del bloque actualizado en tiempo real!',
+      'success'
+    );
+  };
+
   // Run tracking and Supabase initializations on mount
   useEffect(() => {
     initTracking();
@@ -737,61 +764,120 @@ export default function App() {
           />
         </main>
       ) : (
-        /* Client Facing Landing Page View */
+        /* Client Facing Landing Page View with Real-time Block Reordering */
         <main className="animate-fadeIn pb-20 md:pb-0">
-          {/* Hero Segment */}
-          <Hero 
-            language={language} 
-            onNavigate={handleNavigate}
-            isVisualEditMode={isVisualEditMode}
-            onEditElement={(type, key, label, data) => setEditingElement({ type, key, data })}
-            introPhotos={introPhotos}
-            customTranslations={customTranslations}
-          />
+          {sectionOrder.map((sectionId, index) => {
+            const sectionLabels: Record<string, { en: string; es: string }> = {
+              hero: { en: 'Header & Intro Photos', es: 'Bloque: Encabezado & Fotos Intro' },
+              about: { en: 'About Hans Toribio', es: 'Bloque: Sobre el Artista' },
+              booking: { en: 'Tattoo Consultation Form', es: 'Bloque: Formulario de Cotización' },
+              portfolio: { en: 'Tattoo Portfolio Gallery', es: 'Bloque: Galería de Portafolio' },
+              testimonials: { en: 'Client Reviews', es: 'Bloque: Reseñas de Clientes' },
+              faq: { en: 'Frequently Asked Questions', es: 'Bloque: Preguntas Frecuentes' },
+              location: { en: 'Studio Map & Live Hours', es: 'Bloque: Ubicación & Horarios en Vivo' }
+            };
 
-          {/* Professional Biography & About the Artist Section */}
-          <AboutArtist
-            language={language}
-            onNavigate={handleNavigate}
-            isVisualEditMode={isVisualEditMode}
-            onEditElement={(type, key, label, data) => setEditingElement({ type, key, data })}
-            customTranslations={customTranslations}
-          />
+            return (
+              <div 
+                key={sectionId} 
+                className={`relative transition-all duration-300 ${
+                  isVisualEditMode 
+                    ? 'my-6 border-2 border-dashed border-amber-400 rounded-3xl p-3 bg-amber-500/5 shadow-lg' 
+                    : ''
+                }`}
+              >
+                {/* Visual Editor Block Movement Header */}
+                {isVisualEditMode && (
+                  <div className="sticky top-24 z-40 flex items-center justify-between bg-stone-900/95 backdrop-blur-md text-white px-4 py-2.5 rounded-2xl mx-2 mb-4 shadow-xl border border-white/20">
+                    <div className="flex items-center space-x-2.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+                      <span className="text-[11px] font-black tracking-wider uppercase">
+                        {language === 'en' ? sectionLabels[sectionId]?.en : sectionLabels[sectionId]?.es}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        disabled={index === 0}
+                        onClick={() => moveSection(index, 'up')}
+                        className={`px-3 py-1 rounded-xl border border-white/20 text-[11px] font-bold transition-all cursor-pointer ${
+                          index === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-amber-400 hover:text-black hover:border-amber-400'
+                        }`}
+                        title="Mover Bloque Arriba"
+                      >
+                        ▲ Subir Bloque
+                      </button>
+                      <button
+                        disabled={index === sectionOrder.length - 1}
+                        onClick={() => moveSection(index, 'down')}
+                        className={`px-3 py-1 rounded-xl border border-white/20 text-[11px] font-bold transition-all cursor-pointer ${
+                          index === sectionOrder.length - 1 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-amber-400 hover:text-black hover:border-amber-400'
+                        }`}
+                        title="Mover Bloque Abajo"
+                      >
+                        ▼ Bajar Bloque
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-          {/* Consultation Lead Capture Form */}
-          <InquiryForm
-            language={language}
-            preselectedStyle={preselectedStyle}
-            preselectedDescription={preselectedDescription}
-            onInquirySubmitted={handleInquirySubmitted}
-          />
-
-          {/* Curated Interactive Portfolio */}
-          <Portfolio 
-            language={language} 
-            onInquireSimilar={handleInquireSimilar}
-            portfolioItems={portfolioItems}
-            isVisualEditMode={isVisualEditMode}
-            onEditElement={(type, key, label, data) => setEditingElement({ type, key, id: data?.id, data })}
-          />
-
-          {/* Client Testimonials & Reviews */}
-          <Testimonials 
-            language={language} 
-          />
-
-          {/* Frequently Asked Questions */}
-          <FAQ 
-            language={language}
-            faqList={faqList}
-            isVisualEditMode={isVisualEditMode}
-            onEditElement={(type, key, label, data) => setEditingElement({ type, key, id: data?.id, data })}
-          />
-
-          {/* Interactive Google Map of Times Square Location & Dynamic Studio Hours */}
-          <InteractiveMap
-            language={language}
-          />
+                {/* Dynamic Block Component Routing */}
+                {sectionId === 'hero' && (
+                  <Hero 
+                    language={language} 
+                    onNavigate={handleNavigate}
+                    isVisualEditMode={isVisualEditMode}
+                    onEditElement={(type, key, label, data) => setEditingElement({ type, key, data })}
+                    introPhotos={introPhotos}
+                    customTranslations={customTranslations}
+                  />
+                )}
+                {sectionId === 'about' && (
+                  <AboutArtist
+                    language={language}
+                    onNavigate={handleNavigate}
+                    isVisualEditMode={isVisualEditMode}
+                    onEditElement={(type, key, label, data) => setEditingElement({ type, key, data })}
+                    customTranslations={customTranslations}
+                  />
+                )}
+                {sectionId === 'booking' && (
+                  <InquiryForm
+                    language={language}
+                    preselectedStyle={preselectedStyle}
+                    preselectedDescription={preselectedDescription}
+                    onInquirySubmitted={handleInquirySubmitted}
+                  />
+                )}
+                {sectionId === 'portfolio' && (
+                  <Portfolio 
+                    language={language} 
+                    onInquireSimilar={handleInquireSimilar}
+                    portfolioItems={portfolioItems}
+                    isVisualEditMode={isVisualEditMode}
+                    onEditElement={(type, key, label, data) => setEditingElement({ type, key, id: data?.id, data })}
+                  />
+                )}
+                {sectionId === 'testimonials' && (
+                  <Testimonials 
+                    language={language} 
+                  />
+                )}
+                {sectionId === 'faq' && (
+                  <FAQ 
+                    language={language}
+                    faqList={faqList}
+                    isVisualEditMode={isVisualEditMode}
+                    onEditElement={(type, key, label, data) => setEditingElement({ type, key, id: data?.id, data })}
+                  />
+                )}
+                {sectionId === 'location' && (
+                  <InteractiveMap
+                    language={language}
+                  />
+                )}
+              </div>
+            );
+          })}
         </main>
       )}
 
