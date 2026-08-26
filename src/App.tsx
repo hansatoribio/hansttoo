@@ -66,8 +66,17 @@ export default function App() {
 
   // Artist Admin Workspace Mode & Access Control States
   const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
-  const [isAdminAuthorized, setIsAdminAuthorized] = useState<boolean>(false);
+  const [isAdminAuthorized, setIsAdminAuthorized] = useState<boolean>(() => {
+    return localStorage.getItem('hans_admin_authorized') === 'true';
+  });
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
+
+  // Sync admin authorization state
+  useEffect(() => {
+    if (isAdminAuthorized) {
+      localStorage.setItem('hans_admin_authorized', 'true');
+    }
+  }, [isAdminAuthorized]);
 
   // --- VISUAL EDITOR CMS STATE ---
   const [isVisualEditMode, setIsVisualEditMode] = useState<boolean>(false);
@@ -171,6 +180,38 @@ export default function App() {
       });
     }
   }, []);
+
+  // Listen to #admin, /admin, or ?admin=true in URL to open admin panel
+  useEffect(() => {
+    const checkAdminRoute = () => {
+      const hash = window.location.hash.toLowerCase();
+      const pathname = window.location.pathname.toLowerCase();
+      const search = window.location.search.toLowerCase();
+
+      if (
+        hash === '#admin' || 
+        hash.includes('admin') || 
+        pathname === '/admin' || 
+        pathname.endsWith('/admin') || 
+        search.includes('admin=true') || 
+        search.includes('admin=1')
+      ) {
+        if (isAdminAuthorized) {
+          setIsAdminMode(true);
+        } else {
+          setIsLoginModalOpen(true);
+        }
+      }
+    };
+
+    checkAdminRoute();
+    window.addEventListener('hashchange', checkAdminRoute);
+    window.addEventListener('popstate', checkAdminRoute);
+    return () => {
+      window.removeEventListener('hashchange', checkAdminRoute);
+      window.removeEventListener('popstate', checkAdminRoute);
+    };
+  }, [isAdminAuthorized]);
 
   // Preselected Style from Portfolio Inquire CTA
   const [preselectedStyle, setPreselectedStyle] = useState<TattooStyle | null>(null);

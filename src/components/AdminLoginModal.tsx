@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Lock, AlertCircle } from 'lucide-react';
+import { X, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 interface AdminLoginModalProps {
   language: 'en' | 'es';
@@ -16,6 +16,7 @@ export default function AdminLoginModal({
 }: AdminLoginModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [passcode, setPasscode] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Lock body scroll when admin login modal is active
   useEffect(() => {
@@ -34,9 +35,20 @@ export default function AdminLoginModal({
   const handlePasscodeLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    const cleanPass = passcode.trim();
     const storedPasscode = localStorage.getItem('hans_admin_passcode') || 'hans2026';
-    // Secret Passcode Fallback (stored code or hard backup)
-    if (passcode.toLowerCase() === storedPasscode.toLowerCase() || passcode.toLowerCase() === 'hansadmin') {
+    
+    // Accepted master passcodes
+    const validCodes = [
+      storedPasscode.toLowerCase(),
+      'hans2026',
+      'hansadmin',
+      'hansttoo',
+      'hans',
+      'm7bi+ihm/f/vya#'
+    ];
+
+    if (validCodes.includes(cleanPass.toLowerCase()) || cleanPass === 'M7Bi+ihM/F/vya#') {
       onSuccess();
       onClose();
     } else {
@@ -94,14 +106,24 @@ export default function AdminLoginModal({
             <label className="block text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-0.5">
               {language === 'en' ? 'Access Passcode' : 'Código de Acceso'}
             </label>
-            <input
-              type="password"
-              value={passcode}
-              onChange={(e) => setPasscode(e.target.value)}
-              placeholder={language === 'en' ? 'Enter admin code' : 'Ingresa código de admin'}
-              className="w-full px-4 py-3 rounded-2xl border border-stone-200 focus:border-stone-400 bg-white text-stone-900 text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-stone-100 transition-all text-center"
-              autoFocus
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={passcode}
+                onChange={(e) => setPasscode(e.target.value)}
+                placeholder={language === 'en' ? 'Enter admin code' : 'Ingresa código de admin'}
+                className="w-full px-4 py-3 pr-11 rounded-2xl border border-stone-200 focus:border-stone-400 bg-white text-stone-900 text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-stone-100 transition-all text-center"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 cursor-pointer p-1"
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
           
           <div className="flex space-x-2 pt-2">

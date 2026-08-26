@@ -155,19 +155,21 @@ export default function Navbar({
               </button>
             )}
 
-            {/* Artist Portal Mode Trigger */}
-            <button
-              onClick={() => setIsAdminMode(!isAdminMode)}
-              className={`flex items-center space-x-1.5 py-2 px-4 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] border transition-all cursor-pointer ${
-                isAdminMode 
-                  ? 'bg-amber-500 border-amber-500 text-white font-black shadow-lg shadow-amber-500/20' 
-                  : 'bg-transparent border-stone-200 text-stone-700 hover:border-stone-400 hover:bg-stone-50'
-              }`}
-              id="nav-admin-toggle"
-            >
-              <User className="w-3.5 h-3.5" />
-              <span>{isAdminMode ? t.portalModeToggleClient : t.navArtistPortal}</span>
-            </button>
+            {/* Artist Portal Mode Trigger - Only visible when Hans is logged in via URL */}
+            {isAdminAuthorized && (
+              <button
+                onClick={() => setIsAdminMode(!isAdminMode)}
+                className={`flex items-center space-x-1.5 py-2 px-4 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] border transition-all cursor-pointer ${
+                  isAdminMode 
+                    ? 'bg-amber-500 border-amber-500 text-white font-black shadow-lg shadow-amber-500/20' 
+                    : 'bg-stone-100 border-stone-200 text-stone-800 hover:border-stone-400'
+                }`}
+                id="nav-admin-toggle"
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>{isAdminMode ? t.portalModeToggleClient : t.navArtistPortal}</span>
+              </button>
+            )}
 
 
           </div>
