@@ -51,17 +51,18 @@ export default function App() {
     return 'en';
   });
 
-  // Leads/Inquiries State - Synced with LocalStorage, fallback to initialDemoLeads
+  // Leads/Inquiries State - Synced with LocalStorage and loaded directly from Supabase
   const [inquiries, setInquiries] = useState<Inquiry[]>(() => {
     const stored = localStorage.getItem('hans_inquiries');
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
       } catch (e) {
         console.error("Failed to parse stored inquiries", e);
       }
     }
-    return initialDemoLeads;
+    return [];
   });
 
   // Artist Admin Workspace Mode & Access Control States
@@ -268,13 +269,13 @@ export default function App() {
     const stored = localStorage.getItem('hans_subscribers');
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
       } catch (e) {
         console.error("Failed to parse stored subscribers", e);
       }
     }
-    // Seed with beautiful demo subscribers for instant visual completeness
-    return ['collector.alex@gmail.com', 'sophie.mangas@yahoo.com', 'ny.ink.lover@outlook.com'];
+    return [];
   });
 
   useEffect(() => {
@@ -639,59 +640,67 @@ export default function App() {
         );
       }
     } else if (type === 'portfolio' && id) {
-      setPortfolioItems((prev) => 
-        prev.map((item) => item.id === id ? { ...item, ...updatedData } : item)
+      setPortfolioItems((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, ...updatedData } : item))
       );
-      showToast(
-        language === 'en' ? 'Portfolio design updated!' : '¡Diseño de portafolio actualizado!',
-        'success'
-      );
+      showToast(language === 'en' ? 'Tattoo portfolio design updated!' : '¡Diseño de portafolio actualizado!', 'success');
     } else if (type === 'new-portfolio') {
-      setPortfolioItems((prev) => [updatedData, ...prev]);
-      showToast(
-        language === 'en' ? 'New design added to your portfolio!' : '¡Nuevo diseño añadido a tu portafolio!',
-        'success'
-      );
-    } else if (type === 'faq' && id) {
+      const newItem: any = {
+        id: `p-${Date.now()}`,
+        titleEn: updatedData.titleEn || 'New Tattoo Design',
+        titleEs: updatedData.titleEs || 'Nuevo Diseño de Tatuaje',
+        style: updatedData.style || 'fineline',
+        imageUrl: updatedData.imageUrl || 'https://images.unsplash.com/photo-1542382156909-9ae3b0245754?auto=format&fit=crop&q=80&w=600',
+        mediaType: updatedData.mediaType || 'image',
+        size: updatedData.size || '10 cm x 10 cm',
+        duration: updatedData.duration || '2.0 hrs',
+        recoveryDays: updatedData.recoveryDays || 10,
+        placementEn: updatedData.placementEn || 'Forearm',
+        placementEs: updatedData.placementEs || 'Antebrazo',
+        storyEn: updatedData.storyEn || '',
+        storyEs: updatedData.storyEs || '',
+        artistNotesEn: updatedData.artistNotesEn || '',
+        artistNotesEs: updatedData.artistNotesEs || ''
+      };
+      setPortfolioItems((prev) => [newItem, ...prev]);
+      showToast(language === 'en' ? 'New tattoo design added to portfolio!' : '¡Nuevo tatuaje añadido al portafolio!', 'success');
+    } else if (type === 'faq') {
       setFaqList((prev) =>
-        prev.map((item) => item.id === id ? { ...item, ...updatedData } : item)
+        prev.map((faq) =>
+          faq.id === id
+            ? { ...faq, qEn: updatedData.qEn, qEs: updatedData.qEs, aEn: updatedData.aEn, aEs: updatedData.aEs }
+            : faq
+        )
       );
-      showToast(
-        language === 'en' ? 'FAQ question updated!' : '¡Pregunta FAQ actualizada!',
-        'success'
-      );
+      showToast(language === 'en' ? 'FAQ updated!' : '¡Pregunta frecuente actualizada!', 'success');
     } else if (type === 'new-faq') {
-      setFaqList((prev) => [...prev, updatedData]);
-      showToast(
-        language === 'en' ? 'New FAQ item added!' : '¡Nueva pregunta FAQ añadida!',
-        'success'
-      );
+      const newFaq = {
+        id: `faq-${Date.now()}`,
+        qEn: updatedData.qEn || 'New Question',
+        qEs: updatedData.qEs || 'Nueva Pregunta',
+        aEn: updatedData.aEn || 'Answer details...',
+        aEs: updatedData.aEs || 'Detalles de la respuesta...'
+      };
+      setFaqList((prev) => [...prev, newFaq]);
+      showToast(language === 'en' ? 'New FAQ added!' : '¡Nueva pregunta frecuente añadida!', 'success');
     }
 
     setEditingElement(null);
   };
 
-  // Callback: Delete visual elements from live page CMS
+  // Callback: Delete visual elements
   const handleDeleteVisualElement = () => {
     if (!editingElement) return;
-
     const { type, id } = editingElement;
 
     if (type === 'portfolio' && id) {
       setPortfolioItems((prev) => prev.filter((item) => item.id !== id));
       showToast(
-        language === 'en' ? 'Design deleted from portfolio!' : '¡Diseño de portafolio eliminado!',
-        'info'
-      );
-    } else if (type === 'image' && editingElement.key?.startsWith('introPhoto-')) {
-      const idx = parseInt(editingElement.key.split('-')[1]);
-      setIntroPhotos((prev: any) => prev.filter((_: any, i: number) => i !== idx));
-      showToast(
-        language === 'en' ? 'Photo removed from carousel!' : '¡Imagen eliminada del carrusel!',
+        language === 'en' ? 'Tattoo removed from portfolio' : 'Tatuaje eliminado del portafolio',
         'info'
       );
     } else if (type === 'faq' && id) {
-      setFaqList((prev) => prev.filter((item) => item.id !== id));
+      setFaqList((prev) => prev.filter((faq) => faq.id !== id));
       showToast(
         language === 'en' ? 'FAQ question deleted!' : '¡Pregunta FAQ eliminada!',
         'info'
@@ -699,6 +708,21 @@ export default function App() {
     }
 
     setEditingElement(null);
+  };
+
+  // Artist Logout Action (Clears admin session and returns to public view)
+  const handleLogout = () => {
+    setIsAdminAuthorized(false);
+    setIsAdminMode(false);
+    setIsVisualEditMode(false);
+    localStorage.removeItem('hans_admin_authorized');
+    if (window.location.hash.includes('admin')) {
+      window.history.pushState('', document.title, window.location.pathname);
+    }
+    showToast(
+      language === 'en' ? 'Logged out of admin session' : 'Sesión de administrador cerrada',
+      'info'
+    );
   };
 
   return (
@@ -713,6 +737,7 @@ export default function App() {
         isAdminAuthorized={isAdminAuthorized}
         isVisualEditMode={isVisualEditMode}
         setIsVisualEditMode={setIsVisualEditMode}
+        onLogout={handleLogout}
       />
 
       {/* Admin Auth Gate Modal */}
@@ -761,6 +786,7 @@ export default function App() {
             customTranslations={customTranslations}
             setCustomTranslations={setCustomTranslations}
             onEditElement={(type, key, label, data) => setEditingElement({ type, key, id: data?.id, data })}
+            onLogout={handleLogout}
           />
         </main>
       ) : (

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Languages, Instagram, Menu, X, User, PenTool } from 'lucide-react';
+import { Languages, Instagram, Menu, X, User, PenTool, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language } from '../types';
 import { translations } from '../translations';
@@ -13,6 +13,7 @@ interface NavbarProps {
   isAdminAuthorized?: boolean;
   isVisualEditMode?: boolean;
   setIsVisualEditMode?: (mode: boolean) => void;
+  onLogout?: () => void;
 }
 
 export default function Navbar({
@@ -23,7 +24,8 @@ export default function Navbar({
   onNavigate,
   isAdminAuthorized = false,
   isVisualEditMode = false,
-  setIsVisualEditMode
+  setIsVisualEditMode,
+  onLogout
 }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const t = translations[language];
@@ -157,18 +159,31 @@ export default function Navbar({
 
             {/* Artist Portal Mode Trigger - Only visible when Hans is logged in via URL */}
             {isAdminAuthorized && (
-              <button
-                onClick={() => setIsAdminMode(!isAdminMode)}
-                className={`flex items-center space-x-1.5 py-2 px-4 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] border transition-all cursor-pointer ${
-                  isAdminMode 
-                    ? 'bg-amber-500 border-amber-500 text-white font-black shadow-lg shadow-amber-500/20' 
-                    : 'bg-stone-100 border-stone-200 text-stone-800 hover:border-stone-400'
-                }`}
-                id="nav-admin-toggle"
-              >
-                <User className="w-3.5 h-3.5" />
-                <span>{isAdminMode ? t.portalModeToggleClient : t.navArtistPortal}</span>
-              </button>
+              <>
+                <button
+                  onClick={() => setIsAdminMode(!isAdminMode)}
+                  className={`flex items-center space-x-1.5 py-2 px-4 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] border transition-all cursor-pointer ${
+                    isAdminMode 
+                      ? 'bg-amber-500 border-amber-500 text-white font-black shadow-lg shadow-amber-500/20' 
+                      : 'bg-stone-100 border-stone-200 text-stone-800 hover:border-stone-400'
+                  }`}
+                  id="nav-admin-toggle"
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>{isAdminMode ? t.portalModeToggleClient : t.navArtistPortal}</span>
+                </button>
+
+                {/* Secure Logout Button */}
+                <button
+                  onClick={onLogout}
+                  className="flex items-center space-x-1.5 py-2 px-3.5 rounded-full text-[10px] font-bold uppercase tracking-[0.12em] border border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 transition-all cursor-pointer"
+                  id="nav-logout-btn"
+                  title={language === 'en' ? 'Log Out of Admin' : 'Cerrar Sesión de Admin'}
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>{language === 'en' ? 'Logout' : 'Salir'}</span>
+                </button>
+              </>
             )}
 
 
@@ -257,6 +272,32 @@ export default function Navbar({
             ))}
 
 
+
+            {/* Mobile Admin Controls - Only visible when Hans is logged in */}
+            {isAdminAuthorized && (
+              <div className="pt-2 pb-1 border-t border-stone-100 mt-2 space-y-1">
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    setIsAdminMode(!isAdminMode);
+                  }}
+                  className="flex items-center space-x-2 w-full text-left px-4 py-2.5 rounded-xl bg-stone-900 text-white text-xs font-bold uppercase tracking-wider"
+                >
+                  <User className="w-4 h-4 text-amber-400" />
+                  <span>{isAdminMode ? (language === 'en' ? 'View as Client' : 'Ver como Cliente') : (language === 'en' ? 'Admin Dashboard' : 'Panel de Admin')}</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    onLogout?.();
+                  }}
+                  className="flex items-center space-x-2 w-full text-left px-4 py-2 rounded-xl text-rose-600 hover:bg-rose-50 text-xs font-bold uppercase tracking-wider"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>{language === 'en' ? 'Log Out' : 'Cerrar Sesión'}</span>
+                </button>
+              </div>
+            )}
 
             <div className="pt-3 flex items-center justify-between px-4 border-t border-stone-100 mt-2">
               <span className="text-[9px] text-stone-400 font-bold uppercase tracking-widest">INSTAGRAM</span>

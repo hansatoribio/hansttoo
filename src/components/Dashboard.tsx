@@ -6,7 +6,7 @@ import { translations } from '../translations';
 import { 
   Search, Trash2, Download, Check, FileText, RefreshCw, Eye, X, AlertCircle,
   Settings, Globe, Code, Sparkles, Save, Instagram, Phone, Mail, Cloud, Database, Activity, CheckCircle2, TrendingUp, PieChart as PieChartIcon, BarChart2,
-  MessageSquare, ArrowUpRight, History, Feather, Flame, Compass, PenTool, Image as ImageIcon, Plus, Upload, Edit3, FolderPlus, Layers, LayoutGrid, Camera
+  MessageSquare, ArrowUpRight, History, Feather, Flame, Compass, PenTool, Image as ImageIcon, Plus, Upload, Edit3, FolderPlus, Layers, LayoutGrid, Camera, LogOut
 } from 'lucide-react';
 import { syncInquiryToGoogleSheets, googleSignIn, googleSignOut, getAccessToken, auth } from '../lib/workspace';
 import { initTracking } from '../lib/tracking';
@@ -57,6 +57,7 @@ interface DashboardProps {
   customTranslations?: any;
   setCustomTranslations?: React.Dispatch<React.SetStateAction<any>>;
   onEditElement?: (type: 'text' | 'image' | 'portfolio' | 'faq' | 'new-portfolio' | 'new-faq', key?: string, label?: string, data?: any) => void;
+  onLogout?: () => void;
 }
 
 export default function Dashboard({
@@ -990,15 +991,28 @@ export default function Dashboard({
               {language === 'en' ? 'Download CSV Backup' : 'Respaldo CSV'}
             </button>
 
-            {/* Load Demo Leads */}
+            {/* Exit to Client View */}
             <button
-              onClick={onLoadDemoData}
-              className="inline-flex items-center px-5 py-2.5 rounded-full bg-stone-900 hover:bg-black text-white text-xs font-bold tracking-wider uppercase transition-all cursor-pointer shadow-md shadow-stone-900/10"
-              id="dashboard-import-btn"
+              onClick={() => setIsAdminMode?.(false)}
+              className="inline-flex items-center px-4 py-2.5 rounded-full border border-stone-200 bg-white hover:border-stone-400 text-stone-700 hover:text-black text-xs font-bold tracking-wider uppercase transition-all cursor-pointer shadow-sm"
+              id="dashboard-client-view-btn"
             >
-              <RefreshCw className="w-3.5 h-3.5 mr-2 text-[#E53E3E] animate-spin-slow" />
-              {t.portalImportDemo}
+              <Eye className="w-3.5 h-3.5 mr-1.5" />
+              {language === 'en' ? 'View as Client' : 'Ver como Cliente'}
             </button>
+
+            {/* Logout Button */}
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="inline-flex items-center px-4 py-2.5 rounded-full border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-black tracking-wider uppercase transition-all cursor-pointer shadow-sm"
+                id="dashboard-logout-btn"
+                title={language === 'en' ? 'Log out of admin mode' : 'Cerrar sesión de administrador'}
+              >
+                <LogOut className="w-3.5 h-3.5 mr-1.5" />
+                {language === 'en' ? 'Log Out' : 'Cerrar Sesión'}
+              </button>
+            )}
           </div>
         </div>
 
