@@ -1,0 +1,144 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Space Grotesk", "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+@layer utilities {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  .pb-safe {
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Custom fine line needle illustration overlay / patterns */
+.tattoo-grid-bg {
+  background-image: radial-gradient(circle, #e5e5e1 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  background: transparent;
+}
+
+input[type="range"]:focus {
+  outline: none;
+}
+
+input[type="range"]::-moz-focus-outer {
+  border: 0;
+}
+
+/* Custom Webkit Track */
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  background: #e7e5e4; /* stone-200 */
+  border-radius: 9999px;
+  border: none;
+  box-shadow: none;
+  transition: background-color 0.2s ease;
+}
+
+/* Custom Webkit Thumb */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #1c1917; /* stone-900 */
+  border: none; /* Removed white border */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  margin-top: -5px; /* Centering vertically on the 6px track ( (6 - 16) / 2 = -5 ) */
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  background-color: #E53E3E; /* Red accent on hover */
+  box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.15);
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(0.95);
+  background-color: #c53030;
+}
+
+/* Custom Firefox Track */
+input[type="range"]::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  background: #e7e5e4;
+  border-radius: 9999px;
+  border: none;
+  box-shadow: none;
+}
+
+/* Custom Firefox Thumb */
+input[type="range"]::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #1c1917;
+  border: none; /* Removed white border */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  background-color: #E53E3E;
+  box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.15);
+}
+
+input[type="range"]::-moz-range-thumb:active {
+  transform: scale(0.95);
+  background-color: #c53030;
+}
+
+/* Focus states for subtle background changes without harsh outlines */
+input[type="range"]:focus::-webkit-slider-runnable-track {
+  background-color: #d6d3d1; /* stone-300 on focus */
+}
+
+input[type="range"]:focus::-moz-range-track {
+  background-color: #d6d3d1;
+}

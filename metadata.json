@@ -1,0 +1,6 @@
+{
+  "name": "hansttoo",
+  "description": "A modern and clean landing page for hansttoo (Hans Toribio), a tattoo artist specializing in Fine Line, Microrealism, and Anime tattoos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
