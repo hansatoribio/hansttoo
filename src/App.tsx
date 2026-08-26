@@ -1,23 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Language, Inquiry, InquiryStatus, TattooStyle, PortfolioItem } from './types';
 import { initialDemoLeads, initialPortfolioItems } from './data';
 import { translations } from './translations';
-import { Check, AlertCircle, Info, X } from 'lucide-react';
+import { Check, AlertCircle, Info, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-// Components
+// Core Landing Page Components (Eager loaded for instant first paint)
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import AboutArtist from './components/AboutArtist';
 import Portfolio from './components/Portfolio';
 import InquiryForm from './components/InquiryForm';
-import Dashboard from './components/Dashboard';
 import FAQ from './components/FAQ';
 import AdminLoginModal from './components/AdminLoginModal';
 import InteractiveMap from './components/InteractiveMap';
 import Testimonials from './components/Testimonials';
-import VisualElementEditorModal from './components/VisualElementEditorModal';
 import MobileBottomNav from './components/MobileBottomNav';
+
+// Code-split heavy admin & editor components (Only loaded when Hans accesses admin)
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const VisualElementEditorModal = lazy(() => import('./components/VisualElementEditorModal'));
+
 import { trackLeadConversion, initTracking } from './lib/tracking';
 import { isSupabaseConfigured, saveInquiryToSupabase, fetchInquiriesFromSupabase, updateInquiryStatusInSupabase } from './lib/supabase';
 
@@ -753,41 +756,50 @@ export default function App() {
 
       {/* Primary Page Layout Switching */}
       {isAdminMode ? (
-        /* Artist Workspace Dashboard View */
+        /* Artist Workspace Dashboard View (Code-split) */
         <main className="animate-fadeIn">
-          <Dashboard
-            language={language}
-            inquiries={inquiries}
-            onUpdateStatus={handleUpdateStatus}
-            onUpdateNotes={handleUpdateNotes}
-            onUpdateMedicalNotes={handleUpdateMedicalNotes}
-            onDeleteInquiry={handleDeleteInquiry}
-            onLoadDemoData={handleLoadDemoData}
-            showToast={showToast}
-            instagramUsername={instagramUsername}
-            setInstagramUsername={setInstagramUsername}
-            instagramWidgetUrl={instagramWidgetUrl}
-            setInstagramWidgetUrl={setInstagramWidgetUrl}
-            seoTitle={seoTitle}
-            setSeoTitle={setSeoTitle}
-            seoDescription={seoDescription}
-            setSeoDescription={setSeoDescription}
-            seoKeywords={seoKeywords}
-            setSeoKeywords={setSeoKeywords}
-            subscribers={subscribers}
-            onRemoveSubscriber={handleRemoveSubscriber}
-            isVisualEditMode={isVisualEditMode}
-            setIsVisualEditMode={setIsVisualEditMode}
-            setIsAdminMode={setIsAdminMode}
-            introPhotos={introPhotos}
-            setIntroPhotos={setIntroPhotos}
-            portfolioItems={portfolioItems}
-            setPortfolioItems={setPortfolioItems}
-            customTranslations={customTranslations}
-            setCustomTranslations={setCustomTranslations}
-            onEditElement={(type, key, label, data) => setEditingElement({ type, key, id: data?.id, data })}
-            onLogout={handleLogout}
-          />
+          <Suspense fallback={
+            <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-3 p-8">
+              <Loader2 className="w-8 h-8 text-[#E53E3E] animate-spin" />
+              <p className="text-xs font-bold uppercase tracking-widest text-stone-500">
+                {language === 'en' ? 'Loading Workspace Dashboard...' : 'Cargando Panel de Control...'}
+              </p>
+            </div>
+          }>
+            <Dashboard
+              language={language}
+              inquiries={inquiries}
+              onUpdateStatus={handleUpdateStatus}
+              onUpdateNotes={handleUpdateNotes}
+              onUpdateMedicalNotes={handleUpdateMedicalNotes}
+              onDeleteInquiry={handleDeleteInquiry}
+              onLoadDemoData={handleLoadDemoData}
+              showToast={showToast}
+              instagramUsername={instagramUsername}
+              setInstagramUsername={setInstagramUsername}
+              instagramWidgetUrl={instagramWidgetUrl}
+              setInstagramWidgetUrl={setInstagramWidgetUrl}
+              seoTitle={seoTitle}
+              setSeoTitle={setSeoTitle}
+              seoDescription={seoDescription}
+              setSeoDescription={setSeoDescription}
+              seoKeywords={seoKeywords}
+              setSeoKeywords={setSeoKeywords}
+              subscribers={subscribers}
+              onRemoveSubscriber={handleRemoveSubscriber}
+              isVisualEditMode={isVisualEditMode}
+              setIsVisualEditMode={setIsVisualEditMode}
+              setIsAdminMode={setIsAdminMode}
+              introPhotos={introPhotos}
+              setIntroPhotos={setIntroPhotos}
+              portfolioItems={portfolioItems}
+              setPortfolioItems={setPortfolioItems}
+              customTranslations={customTranslations}
+              setCustomTranslations={setCustomTranslations}
+              onEditElement={(type, key, label, data) => setEditingElement({ type, key, id: data?.id, data })}
+              onLogout={handleLogout}
+            />
+          </Suspense>
         </main>
       ) : (
         /* Client Facing Landing Page View with Real-time Block Reordering */
@@ -907,15 +919,19 @@ export default function App() {
         </main>
       )}
 
-      {/* Real-time In-page Visual Editor CMS Modal */}
-      <VisualElementEditorModal
-        language={language}
-        isOpen={!!editingElement}
-        onClose={() => setEditingElement(null)}
-        onSave={handleSaveVisualElement}
-        onDelete={handleDeleteVisualElement}
-        editConfig={editingElement}
-      />
+      {/* Real-time In-page Visual Editor CMS Modal (Code-split) */}
+      {editingElement && (
+        <Suspense fallback={null}>
+          <VisualElementEditorModal
+            language={language}
+            isOpen={!!editingElement}
+            onClose={() => setEditingElement(null)}
+            onSave={handleSaveVisualElement}
+            onDelete={handleDeleteVisualElement}
+            editConfig={editingElement}
+          />
+        </Suspense>
+      )}
 
       {/* Toast Notification HUD Container */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none">
