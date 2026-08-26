@@ -1,16 +1,11 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Inquiry } from '../types';
 
-// Environment variables from Vite (VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY)
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Environment variables with pre-configured production defaults
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jvgcbakgrdvndfkxhaeg.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_xakUorZEOsWpmtAHjRZDSw_Gn8Ak6kj';
 
-export const isSupabaseConfigured = Boolean(
-  supabaseUrl && 
-  supabaseAnonKey && 
-  supabaseUrl !== 'https://your-project.supabase.co' &&
-  supabaseAnonKey !== 'your-anon-key'
-);
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 export const supabase: SupabaseClient | null = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
