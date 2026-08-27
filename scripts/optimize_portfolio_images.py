@@ -27,12 +27,21 @@ ASSETS = (
     Asset("tattoos", "DSCF7791.jpg", "anime-my-hero-tattoo-nyc.webp"),
     Asset("tattoos", "EZ4A6930.jpg", "anime-naruto-tattoo-nyc.webp"),
     Asset("tattoos", "EZ4A7440.jpg", "anime-manga-panel-tattoo-nyc.webp"),
+    Asset("tattoos", "IMG-3815.JPG", "anime-dragon-ball-tattoo-nyc.webp"),
+    Asset("tattoos", "1EZ4A7628.jpg", "anime-mushroom-girl-tattoo-nyc.webp"),
+    Asset("tattoos", "EZ4A199W7.jpg", "anime-color-character-tattoo-nyc.webp"),
     Asset("tattoos", "EZ4A3423.jpg", "microrealism-empire-state-tattoo-nyc.webp"),
     Asset("tattoos", "EZ4A1897.jpg", "microrealism-skeleton-tattoo-nyc.webp"),
     Asset("tattoos", "DSCF8878.jpg", "microrealism-dali-elephant-tattoo-nyc.webp"),
+    Asset("tattoos", "EZ4A6033-Mejorado-NR.png", "microrealism-sea-turtle-tattoo-nyc.webp"),
+    Asset("tattoos", "EZ4A0031.jpg", "microrealism-praying-hands-tattoo-nyc.webp"),
+    Asset("tattoos", "EZ4A7457.jpg", "microrealism-skeleton-hand-rose-tattoo-nyc.webp"),
     Asset("tattoos", "9H8A0309.jpg", "fine-line-hummingbird-tattoo-nyc.webp"),
     Asset("tattoos", "DSCF6120.jpg", "fine-line-geometric-lotus-tattoo-nyc.webp"),
     Asset("tattoos", "EZ4A0063.jpg", "fine-line-botanical-tattoo-nyc.webp"),
+    Asset("tattoos", "EZ4A6873.jpg", "fine-line-botanical-heart-tattoo-nyc.webp"),
+    Asset("tattoos", "DSCF0578.jpg", "fine-line-couple-tattoo-nyc.webp"),
+    Asset("tattoos", "EZ4A6359.jpg", "fine-line-octopus-tattoo-nyc.webp"),
 )
 
 MAX_LONG_EDGE = 1600

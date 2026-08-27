@@ -43,6 +43,21 @@ const portfolioPieces: PortfolioPiece[] = [
     altEn: 'Black ink manga panel tattoo with fine detail by Hans', altEs: 'Tatuaje de panel de manga en tinta negra y detalle fino realizado por Hans',
   },
   {
+    id: 'anime-dragon-ball', style: 'anime', image: '/portfolio/anime-dragon-ball-tattoo-nyc.webp', width: 1066, height: 1600,
+    titleEn: 'Dragon Ball character tattoo', titleEs: 'Tatuaje de personajes de Dragon Ball',
+    altEn: 'Black and grey Dragon Ball anime character tattoo by Hans', altEs: 'Tatuaje de personajes de anime Dragon Ball en negro y gris realizado por Hans',
+  },
+  {
+    id: 'anime-mushroom-girl', style: 'anime', image: '/portfolio/anime-mushroom-girl-tattoo-nyc.webp', width: 1067, height: 1600,
+    titleEn: 'Mushroom character tattoo', titleEs: 'Tatuaje de personaje entre hongos',
+    altEn: 'Anime-style character and mushroom leg tattoo by Hans', altEs: 'Tatuaje de pierna con personaje estilo anime y hongos realizado por Hans',
+  },
+  {
+    id: 'anime-color-character', style: 'anime', image: '/portfolio/anime-color-character-tattoo-nyc.webp', width: 1067, height: 1600,
+    titleEn: 'Color character tattoo', titleEs: 'Tatuaje de personaje a color',
+    altEn: 'Small custom color character tattoo by Hans', altEs: 'Tatuaje pequeño de personaje personalizado a color realizado por Hans',
+  },
+  {
     id: 'micro-empire-state', style: 'microrealism', image: '/portfolio/microrealism-empire-state-tattoo-nyc.webp', width: 1067, height: 1600,
     titleEn: 'Empire State microrealism', titleEs: 'Microrrealismo del Empire State',
     altEn: 'Small-scale Empire State Building microrealism tattoo by Hans', altEs: 'Tatuaje de microrrealismo a pequeña escala del Empire State realizado por Hans',
@@ -58,6 +73,21 @@ const portfolioPieces: PortfolioPiece[] = [
     altEn: 'Surreal long-legged elephant microrealism tattoo by Hans', altEs: 'Tatuaje de elefante surrealista de patas largas realizado por Hans', fit: 'contain',
   },
   {
+    id: 'micro-sea-turtle', style: 'microrealism', image: '/portfolio/microrealism-sea-turtle-tattoo-nyc.webp', width: 1067, height: 1600,
+    titleEn: 'Sea turtle microrealism', titleEs: 'Tortuga marina en microrrealismo',
+    altEn: 'Detailed black and grey sea turtle tattoo by Hans', altEs: 'Tatuaje detallado de tortuga marina en negro y gris realizado por Hans',
+  },
+  {
+    id: 'micro-praying-hands', style: 'microrealism', image: '/portfolio/microrealism-praying-hands-tattoo-nyc.webp', width: 1067, height: 1600,
+    titleEn: 'Praying hands microrealism', titleEs: 'Manos en oración en microrrealismo',
+    altEn: 'Black and grey praying hands tattoo with rays by Hans', altEs: 'Tatuaje de manos en oración con rayos en negro y gris realizado por Hans',
+  },
+  {
+    id: 'micro-skeleton-hand', style: 'microrealism', image: '/portfolio/microrealism-skeleton-hand-rose-tattoo-nyc.webp', width: 1067, height: 1600,
+    titleEn: 'Skeleton hand & rose', titleEs: 'Mano esquelética y rosa',
+    altEn: 'Detailed skeleton hand holding a rose tattoo by Hans', altEs: 'Tatuaje detallado de mano esquelética sosteniendo una rosa realizado por Hans',
+  },
+  {
     id: 'fine-line-hummingbird', style: 'fineline', image: '/portfolio/fine-line-hummingbird-tattoo-nyc.webp', width: 1067, height: 1600,
     titleEn: 'Hummingbird & flower', titleEs: 'Colibrí y flor',
     altEn: 'Fine-line hummingbird and flower tattoo by Hans', altEs: 'Tatuaje de línea fina de colibrí y flor realizado por Hans',
@@ -71,6 +101,21 @@ const portfolioPieces: PortfolioPiece[] = [
     id: 'fine-line-botanical', style: 'fineline', image: '/portfolio/fine-line-botanical-tattoo-nyc.webp', width: 1067, height: 1600,
     titleEn: 'Botanical fine line', titleEs: 'Botánica en línea fina',
     altEn: 'Delicate botanical fine-line tattoo on the forearm by Hans', altEs: 'Tatuaje botánico delicado de línea fina en el antebrazo realizado por Hans',
+  },
+  {
+    id: 'fine-line-heart', style: 'fineline', image: '/portfolio/fine-line-botanical-heart-tattoo-nyc.webp', width: 1067, height: 1600,
+    titleEn: 'Botanical anatomical heart', titleEs: 'Corazón anatómico botánico',
+    altEn: 'Fine-line anatomical heart with flowers tattoo by Hans', altEs: 'Tatuaje de línea fina de corazón anatómico con flores realizado por Hans',
+  },
+  {
+    id: 'fine-line-couple', style: 'fineline', image: '/portfolio/fine-line-couple-tattoo-nyc.webp', width: 1067, height: 1600,
+    titleEn: 'Couple linework tattoo', titleEs: 'Tatuaje lineal de pareja',
+    altEn: 'Red and black fine-line couple tattoo by Hans', altEs: 'Tatuaje de pareja en línea fina roja y negra realizado por Hans',
+  },
+  {
+    id: 'fine-line-octopus', style: 'fineline', image: '/portfolio/fine-line-octopus-tattoo-nyc.webp', width: 1067, height: 1600,
+    titleEn: 'Ornamental octopus', titleEs: 'Pulpo ornamental',
+    altEn: 'Ornamental fine-line octopus tattoo across the foot by Hans', altEs: 'Tatuaje ornamental de pulpo en línea fina sobre el pie realizado por Hans',
   },
 ];
 
@@ -88,8 +133,8 @@ export default function Portfolio({ language, onInquireSimilar }: PortfolioProps
             <h2 className="mt-3 max-w-3xl text-4xl font-black tracking-[-0.05em] sm:text-6xl">{isEnglish ? 'Real tattoos by Hans.' : 'Tatuajes reales de Hans.'}</h2>
             <p className="mt-4 max-w-2xl leading-7 text-stone-300">
               {isEnglish
-                ? 'A selection of custom anime, microrealism, and fine-line work. Every image below is an authentic tattoo from Hans’s portfolio.'
-                : 'Una selección de trabajos personalizados de anime, microrrealismo y línea fina. Cada imagen pertenece al portafolio auténtico de Hans.'}
+                ? 'Six selected pieces in each specialty. Every image below is an authentic tattoo from Hans’s portfolio.'
+                : 'Seis piezas seleccionadas por especialidad. Cada imagen pertenece al portafolio auténtico de Hans.'}
             </p>
           </div>
           <a href="https://instagram.com/hansttoo" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center self-start rounded-full border border-white/25 px-5 text-sm font-black hover:bg-white hover:text-stone-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
@@ -112,7 +157,7 @@ export default function Portfolio({ language, onInquireSimilar }: PortfolioProps
           {visible.map((item) => {
             const specialty = specialties.find((entry) => entry.id === item.style);
             return (
-              <figure key={item.id} className="group overflow-hidden rounded-3xl border border-white/15 bg-white/[0.04]">
+              <figure key={item.id} className="group overflow-hidden rounded-3xl border border-white/15 bg-white/[0.04] [contain-intrinsic-size:600px] [content-visibility:auto]">
                 <div className="aspect-[3/4] overflow-hidden bg-black">
                   <img
                     src={item.image}

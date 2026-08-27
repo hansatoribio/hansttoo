@@ -65,4 +65,4 @@ To regenerate the web copies after replacing or adding approved originals, insta
 python scripts/optimize_portfolio_images.py --source-root C:/path/to/hansttoo
 ```
 
-The current selection reduces roughly 72 MB of source photography to about 0.6 MB while stripping camera metadata and preserving enough resolution for modern high-density screens.
+The current selection reduces roughly 206.5 MB of source photography to about 1.3 MB while stripping camera metadata and preserving enough resolution for modern high-density screens.

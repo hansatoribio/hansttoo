@@ -138,7 +138,10 @@ test('portfolio uses verified local WebP images with accessible loading hints', 
   assert.match(portfolio, /\/portfolio\/fine-line-hummingbird-tattoo-nyc\.webp/);
   assert.match(portfolio, /loading="lazy"/);
   assert.match(portfolio, /decoding="async"/);
-  assert.match(portfolio, /Every image below is an authentic tattoo/);
+  assert.match(portfolio, /Six selected pieces in each specialty/);
+  assert.equal([...portfolio.matchAll(/style: 'anime'/g)].length, 6);
+  assert.equal([...portfolio.matchAll(/style: 'microrealism'/g)].length, 6);
+  assert.equal([...portfolio.matchAll(/style: 'fineline'/g)].length, 6);
   assert.match(about, /\/portfolio\/hans-tattoo-artist-nyc\.webp/);
   assert.doesNotMatch(portfolio, /cannot currently be rendered|ImageOff/);
 });
