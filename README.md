@@ -21,7 +21,7 @@ npm run build
 
 ## Consultation form configuration
 
-Copy `.env.example` to `.env.local` and add only the public Supabase project URL and public publishable/anon key for this repository’s approved project. Never put a `service_role` or secret key in a `VITE_` variable; Vite exposes these values to browsers.
+Copy `.env.example` to `.env.local` and add only the public Supabase project URL and public publishable/anon key for this repository’s approved project. The client accepts the legacy `VITE_SUPABASE_*` names or the explicit Vercel Config names `VITE_PUBLIC_SUPABASE_URL` and `VITE_PUBLIC_SUPABASE_ANON_KEY`. Never put a `service_role` or secret key in a `VITE_` variable; Vite exposes these values to browsers.
 
 The form fails visibly when Supabase is not configured. It does not pretend a lead was delivered and does not store consultation data in local storage.
 
