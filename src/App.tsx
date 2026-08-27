@@ -23,7 +23,14 @@ const Dashboard = lazy(() => import('./components/Dashboard'));
 const VisualElementEditorModal = lazy(() => import('./components/VisualElementEditorModal'));
 
 import { trackLeadConversion, initTracking } from './lib/tracking';
-import { isSupabaseConfigured, saveInquiryToSupabase, fetchInquiriesFromSupabase, updateInquiryStatusInSupabase } from './lib/supabase';
+import { 
+  isSupabaseConfigured, 
+  saveInquiryToSupabase, 
+  fetchInquiriesFromSupabase, 
+  updateInquiryStatusInSupabase,
+  updateInquiryNotesInSupabase,
+  deleteInquiryFromSupabase
+} from './lib/supabase';
 
 export default function App() {
   // Toast Notifications State
@@ -541,6 +548,9 @@ export default function App() {
     setInquiries((prev) => 
       prev.map((inq) => inq.id === id ? { ...inq, artistNotes } : inq)
     );
+    if (isSupabaseConfigured) {
+      updateInquiryNotesInSupabase(id, artistNotes).catch(() => {});
+    }
     showToast(
       language === 'en'
         ? 'Artist notes saved successfully'
@@ -552,6 +562,9 @@ export default function App() {
   // Callback: Artist deletes an inquiry
   const handleDeleteInquiry = (id: string) => {
     setInquiries((prev) => prev.filter((inq) => inq.id !== id));
+    if (isSupabaseConfigured) {
+      deleteInquiryFromSupabase(id).catch(() => {});
+    }
     showToast(
       language === 'en'
         ? 'Inquiry deleted successfully'

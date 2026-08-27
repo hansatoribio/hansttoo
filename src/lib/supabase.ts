@@ -284,3 +284,49 @@ export async function updateInquiryStatusInSupabase(id: string, status: Inquiry[
     return false;
   }
 }
+
+/**
+ * Delete an inquiry from Supabase
+ */
+export async function deleteInquiryFromSupabase(id: string): Promise<boolean> {
+  if (!supabase) return false;
+
+  try {
+    const { error } = await supabase
+      .from('inquiries')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Failed to delete inquiry from Supabase:', error);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error('Error in deleteInquiryFromSupabase:', error);
+    return false;
+  }
+}
+
+/**
+ * Update inquiry artist notes in Supabase
+ */
+export async function updateInquiryNotesInSupabase(id: string, artistNotes: string): Promise<boolean> {
+  if (!supabase) return false;
+
+  try {
+    const { error } = await supabase
+      .from('inquiries')
+      .update({ artist_notes: artistNotes })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Failed to update notes in Supabase:', error);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error('Error in updateInquiryNotesInSupabase:', error);
+    return false;
+  }
+}

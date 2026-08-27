@@ -9,7 +9,7 @@ import {
   MessageSquare, ArrowUpRight, History, Feather, Flame, Compass, PenTool, Image as ImageIcon, Plus, Upload, Edit3, FolderPlus, Layers, LayoutGrid, Camera, LogOut,
   Clock, MapPin, Video, Play
 } from 'lucide-react';
-import { syncInquiryToGoogleSheets, googleSignIn, googleSignOut, getAccessToken, auth } from '../lib/workspace';
+import { isSupabaseConfigured, fetchInquiriesFromSupabase, deleteInquiryFromSupabase } from '../lib/supabase';
 import { initTracking } from '../lib/tracking';
 import { isVideoUrl, getGoogleDriveEmbedUrl } from '../lib/media';
 import {
@@ -168,20 +168,39 @@ export default function Dashboard({
   const [emailBody, setEmailBody] = useState('');
   const [emailTemplateType, setEmailTemplateType] = useState<'accept' | 'moreInfo' | 'decline' | 'custom'>('accept');
 
-  // Google API Sync States
-  const [googleUser, setGoogleUser] = useState<{ email?: string; name?: string } | null>(() => {
-    const cachedUser = auth.currentUser;
-    if (cachedUser && getAccessToken()) {
-      return { email: cachedUser.email || undefined, name: cachedUser.displayName || undefined };
+  // Supabase Cloud Sync States
+  const [isSyncingSupabase, setIsSyncingSupabase] = useState(false);
+
+  const handleRefreshSupabase = async () => {
+    setIsSyncingSupabase(true);
+    try {
+      const fresh = await fetchInquiriesFromSupabase();
+      if (fresh) {
+        const cleanItems = fresh.filter(i => 
+          !i.id?.startsWith('lead-') && 
+          !i.email?.includes('example.com') &&
+          i.fullName !== 'Clara Ross' &&
+          i.fullName !== 'Marc Evans' &&
+          i.fullName !== 'Yuki Tanaka'
+        );
+        localStorage.setItem('hans_inquiries', JSON.stringify(cleanItems));
+        showToast(
+          language === 'en'
+            ? `Synced ${cleanItems.length} inquiries with Supabase Cloud!`
+            : `¡${cleanItems.length} consultas sincronizadas con Supabase en la nube!`,
+          'success'
+        );
+      }
+    } catch (err: any) {
+      console.error('Supabase fetch error:', err);
+      showToast(
+        language === 'en' ? 'Error syncing with Supabase' : 'Error al sincronizar con Supabase',
+        'error'
+      );
+    } finally {
+      setIsSyncingSupabase(false);
     }
-    return null;
-  });
-  const [syncingId, setSyncingId] = useState<string | null>(null);
-  const [syncProgress, setSyncProgress] = useState<string>('');
-  const [syncedIds, setSyncedIds] = useState<Set<string>>(() => {
-    const stored = localStorage.getItem('hans_synced_inquiry_ids');
-    return stored ? new Set(JSON.parse(stored)) : new Set();
-  });
+  };
 
   // Ads tracking pixels states
   const [metaPixelId, setMetaPixelId] = useState(() => localStorage.getItem('hans_meta_pixel_id') || '');
@@ -209,156 +228,6 @@ export default function Dashboard({
     localStorage.setItem('hans_google_analytics_id', googleAnalyticsId);
     initTracking();
   }, [googleAnalyticsId]);
-
-  useEffect(() => {
-    localStorage.setItem('hans_synced_inquiry_ids', JSON.stringify(Array.from(syncedIds)));
-  }, [syncedIds]);
-
-  // Handle Google OAuth connecting inside dashboard
-  const [authDomainError, setAuthDomainError] = useState<boolean>(false);
-
-  const handleConnectGoogle = async () => {
-    try {
-      setAuthDomainError(false);
-      const res = await googleSignIn();
-      if (res) {
-        setGoogleUser({
-          email: res.user.email || undefined,
-          name: res.user.displayName || undefined
-        });
-        showToast(
-          language === 'en' ? 'Connected to Google Workspace successfully!' : '¡Cuenta de Google conectada con éxito!',
-          'success'
-        );
-      }
-    } catch (err: any) {
-      console.error('Google Sign in failed:', err);
-      if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('unauthorized-domain')) {
-        setAuthDomainError(true);
-        showToast(
-          language === 'en'
-            ? 'Firebase Domain Authorization needed: Please add hansttoo.vercel.app to Authorized Domains in Firebase Console.'
-            : 'Se requiere autorizar el dominio: Agrega hansttoo.vercel.app en Firebase Console > Authentication > Settings > Authorized domains.',
-          'error'
-        );
-      } else {
-        showToast(
-          language === 'en' ? 'Failed to connect Google account.' : 'No se pudo conectar la cuenta de Google.',
-          'error'
-        );
-      }
-    }
-  };
-
-  const handleDisconnectGoogle = async () => {
-    await googleSignOut();
-    setGoogleUser(null);
-  };
-
-  // Sync individual lead
-  const handleSyncLead = async (inq: Inquiry) => {
-    setSyncingId(inq.id);
-    setSyncProgress('Initializing sync...');
-    try {
-      // If we don't have a token, we must sign in first
-      let token = getAccessToken();
-      if (!token) {
-        setSyncProgress('Requesting Google authentication...');
-        const res = await googleSignIn();
-        if (res) {
-          setGoogleUser({
-            email: res.user.email || undefined,
-            name: res.user.displayName || undefined
-          });
-          token = res.accessToken;
-        } else {
-          throw new Error('Google authentication cancelled.');
-        }
-      }
-
-      await syncInquiryToGoogleSheets(inq, (msg) => {
-        setSyncProgress(msg);
-      });
-
-      setSyncedIds(prev => {
-        const next = new Set(prev);
-        next.add(inq.id);
-        return next;
-      });
-
-      // Update active selected inquiry in modal if open
-      if (selectedInquiry && selectedInquiry.id === inq.id) {
-        setSelectedInquiry({
-          ...selectedInquiry,
-          // Trigger a re-render
-        });
-      }
-
-      showToast(language === 'en' ? 'Successfully synced to Google Sheets and Drive!' : '¡Sincronizado correctamente con Google Sheets y Google Drive!', 'success');
-
-    } catch (err: any) {
-      console.error(err);
-      showToast(`Sync Error: ${err.message || err}`, 'error');
-    } finally {
-      setSyncingId(null);
-      setSyncProgress('');
-    }
-  };
-
-  // Sync all unsynced leads
-  const handleSyncAllPending = async () => {
-    const unsynced = filteredInquiries.filter(inq => !syncedIds.has(inq.id));
-    if (unsynced.length === 0) {
-      showToast(language === 'en' ? 'All filtered leads are already synced!' : '¡Todos los leads filtrados ya están sincronizados!', 'info');
-      return;
-    }
-
-    if (!window.confirm(language === 'en' 
-      ? `Are you sure you want to sync ${unsynced.length} unsynced leads to Google Sheets/Drive?`
-      : `¿Estás seguro de que quieres sincronizar ${unsynced.length} leads no sincronizados a Google Sheets/Drive?`
-    )) {
-      return;
-    }
-
-    // Try to authorize first
-    let token = getAccessToken();
-    if (!token) {
-      try {
-        const res = await googleSignIn();
-        if (res) {
-          setGoogleUser({
-            email: res.user.email || undefined,
-            name: res.user.displayName || undefined
-          });
-          token = res.accessToken;
-        } else {
-          return;
-        }
-      } catch (err) {
-        console.error(err);
-        return;
-      }
-    }
-
-    for (const inq of unsynced) {
-      setSyncingId(inq.id);
-      setSyncProgress(`Syncing ${inq.fullName}...`);
-      try {
-        await syncInquiryToGoogleSheets(inq);
-        setSyncedIds(prev => {
-          const next = new Set(prev);
-          next.add(inq.id);
-          return next;
-        });
-      } catch (err) {
-        console.error(`Failed to sync ${inq.fullName}:`, err);
-      }
-    }
-
-    setSyncingId(null);
-    setSyncProgress('');
-    showToast(language === 'en' ? 'Bulk sync process completed!' : '¡Proceso de sincronización masiva completado!', 'success');
-  };
 
   // Filters & Search
   const [searchTerm, setSearchTerm] = useState('');
@@ -981,17 +850,18 @@ export default function Dashboard({
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {/* Sync All to Google Sheets */}
+            {/* Sync / Refresh Supabase Cloud */}
             <button
-              onClick={handleSyncAllPending}
-              disabled={syncingId !== null}
+              onClick={handleRefreshSupabase}
+              disabled={isSyncingSupabase}
               className="inline-flex items-center px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black tracking-wider uppercase transition-all cursor-pointer shadow-md shadow-emerald-600/10 disabled:opacity-55"
-              id="dashboard-sync-all-btn"
+              id="dashboard-sync-supabase-btn"
+              title={language === 'en' ? 'Sync and fetch live inquiries from Supabase Cloud' : 'Sincronizar y recargar consultas desde Supabase'}
             >
-              <Cloud className={`w-3.5 h-3.5 mr-2 ${syncingId !== null ? 'animate-bounce' : ''}`} />
-              {syncingId !== null && syncingId.startsWith('sync-all') 
+              <Database className={`w-3.5 h-3.5 mr-2 ${isSyncingSupabase ? 'animate-spin' : ''}`} />
+              {isSyncingSupabase 
                 ? (language === 'en' ? 'Syncing...' : 'Sincronizando...')
-                : (language === 'en' ? 'Sync All to Sheets' : 'Sincronizar Todo a Sheets')}
+                : (language === 'en' ? 'Sync Supabase' : 'Sincronizar Supabase')}
             </button>
 
             {/* Export Leads */}
@@ -1577,28 +1447,13 @@ export default function Dashboard({
                     {/* Actions */}
                     <td className="py-4.5 px-6 text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        {/* Google Sheets / Drive Sync Icon */}
-                        {syncedIds.has(inq.id) ? (
-                          <span 
-                            className="p-2 rounded-full border border-emerald-100 bg-emerald-50 text-emerald-600 flex items-center justify-center cursor-default shadow-inner"
-                            title={language === 'en' ? "Synced to Google Sheets & Drive" : "Sincronizado con Google Sheets y Drive"}
-                          >
-                            <CheckCircle2 className="w-4 h-4" />
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => handleSyncLead(inq)}
-                            disabled={syncingId !== null}
-                            className={`p-2 rounded-full border border-stone-200 bg-white hover:border-emerald-500 hover:bg-emerald-50 text-stone-500 hover:text-emerald-600 cursor-pointer active:scale-95 transition-all shadow-sm ${syncingId !== null ? 'opacity-55' : ''}`}
-                            title={language === 'en' ? "Sync to Google Sheets & Drive" : "Sincronizar a Google Sheets y Drive"}
-                          >
-                            {syncingId === inq.id ? (
-                              <RefreshCw className="w-4 h-4 text-emerald-500 animate-spin" />
-                            ) : (
-                              <Cloud className="w-4 h-4" />
-                            )}
-                          </button>
-                        )}
+                        {/* Supabase Cloud Live Indicator */}
+                        <span 
+                          className="p-2 rounded-full border border-emerald-100 bg-emerald-50 text-emerald-600 flex items-center justify-center cursor-default shadow-sm"
+                          title={language === 'en' ? "Stored in Supabase Cloud Database" : "Guardado en la base de datos Supabase"}
+                        >
+                          <Database className="w-4 h-4 text-emerald-600" />
+                        </span>
 
                         {/* Quick Email Response Overlay */}
                         <button
@@ -2437,79 +2292,64 @@ export default function Dashboard({
             {/* Artist Settings & Connectors Panel */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" id="artist-settings-panel">
           
-          {/* Google Workspace Connection Card */}
+          {/* Supabase Cloud Database & Storage Card */}
           <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-100 shadow-sm space-y-6">
             <div className="flex items-center space-x-3 pb-4 border-b border-stone-100">
               <div className="p-2.5 rounded-2xl bg-emerald-50 text-emerald-600">
-                <Cloud className="w-5 h-5 animate-pulse" />
+                <Database className="w-5 h-5 animate-pulse" />
               </div>
               <div>
                 <h3 className="text-sm font-black tracking-wider uppercase text-stone-900">
-                  {language === 'en' ? 'Google Sheets & Drive Leads Sync' : 'Google Sheets y Drive en Vivo'}
+                  {language === 'en' ? 'Supabase Cloud Database & Storage' : 'Base de Datos y Storage Supabase en la Nube'}
                 </h3>
                 <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">
-                  {language === 'en' ? 'Sync inquiries & photos to Google Cloud' : 'Envía datos e imágenes a Google Sheets y Drive'}
+                  {language === 'en' ? 'PostgreSQL Database & CDN Photo Storage' : 'Base de Datos PostgreSQL y Almacenamiento CDN'}
                 </p>
               </div>
             </div>
 
             <div className="space-y-4">
-              {googleUser ? (
-                <div className="p-4 rounded-2xl bg-emerald-50/55 border border-emerald-100 space-y-3.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-emerald-800 font-extrabold uppercase tracking-wider flex items-center">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
-                      {language === 'en' ? 'Status: Connected' : 'Estado: Conectado'}
-                    </span>
-                    <button
-                      onClick={handleDisconnectGoogle}
-                      className="px-3 py-1 bg-white hover:bg-rose-50 border border-stone-200 hover:border-rose-200 text-stone-500 hover:text-rose-600 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer"
-                    >
-                      {language === 'en' ? 'Disconnect' : 'Desconectar'}
-                    </button>
-                  </div>
-                  <div className="text-xs font-semibold text-stone-700">
-                    <p className="font-sans">
-                      {language === 'en' ? 'Authorized Email:' : 'Correo Autorizado:'}{' '}
-                      <strong className="font-mono text-stone-900">{googleUser.email}</strong>
-                    </p>
-                    <p className="text-[10px] text-stone-500 mt-2 leading-relaxed">
-                      {language === 'en'
-                        ? 'Your inquiries are automatically saved into a Google Sheet called "Hans Tattoo Inquiries" and customer images are uploaded to Google Drive. Keep this window open for instant sync.'
-                        : 'Las consultas se guardan automáticamente en la hoja "Hans Tattoo Inquiries" de tu cuenta y las fotos de referencia se suben a tu Google Drive.'}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-5 rounded-2xl bg-stone-50 border border-stone-150 text-center space-y-4">
-                  <p className="text-xs text-stone-500 font-semibold leading-relaxed max-w-sm mx-auto">
-                    {language === 'en'
-                      ? 'Link your tattoo Google account to automatically store consultation inquiries and referential artworks in Google Sheets & Drive.'
-                      : 'Conecta tu cuenta de Google para organizar de manera segura todas tus solicitudes y fotos en Google Sheets y Google Drive.'}
-                  </p>
-                  {authDomainError && (
-                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs text-amber-900 space-y-1.5 animate-fadeIn">
-                      <div className="font-bold flex items-center gap-1.5 text-amber-800">
-                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                        <span>{language === 'en' ? 'Domain Authorization Required (Firebase)' : 'Se requiere autorizar el dominio (Firebase)'}</span>
-                      </div>
-                      <p className="text-[11px] leading-relaxed text-amber-800/90">
-                        {language === 'en'
-                          ? 'To allow Google Login on hansttoo.vercel.app, please add "hansttoo.vercel.app" to Firebase Console > Authentication > Settings > Authorized domains.'
-                          : 'Para permitir iniciar sesión en hansttoo.vercel.app, agrega "hansttoo.vercel.app" en Firebase Console > Authentication > Settings > Authorized domains (Dominios Autorizados).'}
-                      </p>
-                    </div>
-                  )}
-
+              <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-emerald-800 font-extrabold uppercase tracking-wider flex items-center">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
+                    {language === 'en' ? 'Status: Active & Connected' : 'Estado: Activo & Conectado'}
+                  </span>
                   <button
-                    onClick={handleConnectGoogle}
-                    className="inline-flex items-center justify-center space-x-2 px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black tracking-wider uppercase transition-all cursor-pointer shadow-sm"
+                    onClick={handleRefreshSupabase}
+                    disabled={isSyncingSupabase}
+                    className="px-3 py-1 bg-white hover:bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-1"
                   >
-                    <Database className="w-4 h-4" />
-                    <span>{language === 'en' ? 'Connect Google Account' : 'Conectar Cuenta Google'}</span>
+                    <RefreshCw className={`w-3 h-3 ${isSyncingSupabase ? 'animate-spin' : ''}`} />
+                    <span>{language === 'en' ? 'Refresh DB' : 'Recargar DB'}</span>
                   </button>
                 </div>
-              )}
+
+                <div className="text-xs space-y-1.5 text-stone-700">
+                  <p className="font-sans flex items-center justify-between">
+                    <span className="text-stone-500">{language === 'en' ? 'Database Engine:' : 'Motor de Base de Datos:'}</span>
+                    <strong className="font-mono text-stone-900">PostgreSQL (Supabase)</strong>
+                  </p>
+                  <p className="font-sans flex items-center justify-between">
+                    <span className="text-stone-500">{language === 'en' ? 'Inquiries Table:' : 'Tabla de Consultas:'}</span>
+                    <strong className="font-mono text-stone-900">public.inquiries</strong>
+                  </p>
+                  <p className="font-sans flex items-center justify-between">
+                    <span className="text-stone-500">{language === 'en' ? 'Storage Bucket:' : 'Bucket de Fotos:'}</span>
+                    <strong className="font-mono text-stone-900">inquiry-images</strong>
+                  </p>
+                  <p className="font-sans flex items-center justify-between">
+                    <span className="text-stone-500">{language === 'en' ? 'Current Leads Count:' : 'Total de Leads:'}</span>
+                    <strong className="font-mono text-emerald-700">{inquiries.length} {language === 'en' ? 'Records' : 'Registros'}</strong>
+                  </p>
+                </div>
+
+                <p className="text-[10px] text-stone-500 pt-2 border-t border-emerald-100/60 leading-relaxed">
+                  {language === 'en'
+                    ? 'All tattoo inquiries submitted on your website are automatically sent and securely stored in your Supabase cloud database with optimized image compression.'
+                    : 'Todas las solicitudes de tatuajes enviadas en tu página web se guardan automáticamente en tu base de datos Supabase en la nube con compresión optimizada de fotos.'}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -3879,32 +3719,11 @@ export default function Dashboard({
                     <div className="flex items-center space-x-3">
                       <span className="text-[9px] font-black uppercase tracking-widest text-stone-400">ID: {selectedInquiry.id}</span>
                       
-                      {/* Sync status / button in Modal */}
-                      {syncedIds.has(selectedInquiry.id) ? (
-                        <span className="inline-flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
-                          <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-                          {language === 'en' ? 'Synced to Sheets' : 'Sincronizado'}
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleSyncLead(selectedInquiry)}
-                          disabled={syncingId !== null}
-                          className="inline-flex items-center px-4 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer shadow-sm"
-                        >
-                          {syncingId === selectedInquiry.id ? (
-                            <>
-                              <RefreshCw className="w-3 h-3 mr-1.5 animate-spin" />
-                              <span>{syncProgress || (language === 'en' ? 'Syncing...' : 'Sincronizando...')}</span>
-                            </>
-                          ) : (
-                            <>
-                              <Cloud className="w-3 h-3 mr-1.5 text-emerald-600" />
-                              <span>{language === 'en' ? 'Sync to Sheets & Drive' : 'Subir a Sheets & Drive'}</span>
-                            </>
-                          )}
-                        </button>
-                      )}
+                      {/* Supabase Status Indicator in Modal */}
+                      <span className="inline-flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+                        <Database className="w-3.5 h-3.5 mr-1.5 shrink-0 text-emerald-600" />
+                        {language === 'en' ? 'Supabase Cloud Synced' : 'Supabase Conectado'}
+                      </span>
                     </div>
 
                     <button

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Image as ImageIcon, Upload, Trash2, HelpCircle, Check, Loader2 } from 'lucide-react';
 import { PortfolioItem, TattooStyle } from '../types';
-import { uploadImageToDrive, getAccessToken } from '../lib/workspace';
 import { uploadImageToSupabase, isSupabaseConfigured } from '../lib/supabase';
 import { isVideoUrl, getGoogleDriveEmbedUrl } from '../lib/media';
 
@@ -29,7 +28,6 @@ export default function VisualElementEditorModal({
 }: VisualElementEditorModalProps) {
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
-  const isGoogleConnected = !!getAccessToken();
 
   // Unified Form States
   const [textEn, setTextEn] = useState('');
@@ -140,30 +138,17 @@ export default function VisualElementEditorModal({
             const publicUrl = await uploadImageToSupabase(base64Str, `cms-${Date.now()}`);
             setImageUrl(publicUrl);
             setMediaType(isVideo ? 'video' : 'image');
-            setUploadProgress(language === 'en' ? 'Success! Image saved to Supabase' : '¡Éxito! Imagen guardada en Supabase');
+            setUploadProgress(language === 'en' ? 'Success! Saved to Supabase' : '¡Éxito! Guardado en Supabase');
           } catch (err: any) {
             console.error('Supabase upload failed', err);
             setImageUrl(base64Str);
             setMediaType(isVideo ? 'video' : 'image');
             setUploadProgress(language === 'en' ? 'Saved as local preview' : 'Guardado como vista previa');
           }
-        } else if (isGoogleConnected) {
-          setUploadProgress(language === 'en' ? 'Uploading to Google Drive...' : 'Subiendo a Google Drive...');
-          try {
-            const driveUrl = await uploadImageToDrive(base64Str, `hansttoo_${Date.now()}_${file.name}`);
-            setImageUrl(driveUrl);
-            setMediaType(isVideo ? 'video' : 'image');
-            setUploadProgress(language === 'en' ? 'Success! Saved to Drive' : '¡Éxito! Guardado en Drive');
-          } catch (err: any) {
-            console.error('Drive upload failed', err);
-            setImageUrl(base64Str);
-            setMediaType(isVideo ? 'video' : 'image');
-            setUploadProgress(language === 'en' ? 'Upload failed. Kept as offline base64' : 'Fallo de subida. Guardado como base64 local');
-          }
         } else {
           setImageUrl(base64Str);
           setMediaType(isVideo ? 'video' : 'image');
-          setUploadProgress(language === 'en' ? 'Saved as local base64' : 'Guardado como base64 local');
+          setUploadProgress(language === 'en' ? 'Saved as local preview' : 'Guardado como vista previa');
         }
         setLoading(false);
         setTimeout(() => setUploadProgress(null), 3000);
@@ -244,23 +229,23 @@ export default function VisualElementEditorModal({
         {/* Form Body - Scrollable */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
           
-          {/* Drive status message */}
+          {/* Supabase status message */}
           {(editConfig.type === 'image' || editConfig.type === 'portfolio' || editConfig.type === 'new-portfolio') && (
             <div className={`p-3 rounded-2xl border text-[11px] font-medium leading-normal flex items-center gap-2.5 ${
-              isGoogleConnected 
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-850' 
+              isSupabaseConfigured 
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
                 : 'bg-stone-100 border-stone-200 text-stone-600'
             }`}>
-              <span className={`h-2 w-2 rounded-full shrink-0 ${isGoogleConnected ? 'bg-emerald-500 animate-pulse' : 'bg-stone-400'}`} />
+              <span className={`h-2 w-2 rounded-full shrink-0 ${isSupabaseConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-stone-400'}`} />
               <span>
-                {isGoogleConnected ? (
+                {isSupabaseConfigured ? (
                   language === 'en'
-                    ? 'Cloud Integrated: Files uploaded here will save directly to your Google Drive folder and sync to the cloud!'
-                    : 'Integración en la Nube: Los archivos se subirán directamente a tu Google Drive para máxima estabilidad.'
+                    ? 'Cloud Integrated: Files uploaded here save directly to Supabase Storage with automatic WebP compression!'
+                    : 'Integración en la Nube: Los archivos se guardan directamente en Supabase Storage con compresión WebP automática.'
                 ) : (
                   language === 'en'
-                    ? 'Offline Mode: Files are saved in browser state. For persistent cloud storage, login with Google on the Artist Portal.'
-                    : 'Modo Offline: Archivos guardados en el navegador. Para almacenamiento persistente en la nube, entra con Google en el Portal.'
+                    ? 'Local Mode: Files are saved locally in base64 format.'
+                    : 'Modo Local: Los archivos se guardan localmente en formato base64.'
                 )}
               </span>
             </div>
