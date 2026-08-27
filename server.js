@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const distDirectory = path.resolve(currentDirectory, 'dist');
 const port = Number(process.env.PORT || 8080);
+const host = process.env.HOST || '0.0.0.0';
 
 const contentTypes = new Map([
   ['.css', 'text/css; charset=utf-8'],
@@ -25,8 +26,15 @@ const contentTypes = new Map([
 
 function setSecurityHeaders(response) {
   response.setHeader('X-Content-Type-Options', 'nosniff');
+  response.setHeader('X-Frame-Options', 'DENY');
   response.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  response.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  response.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://connect.facebook.net https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: https:; frame-src https://www.google.com https://maps.google.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.doubleclick.net https://*.googleadservices.com https://*.facebook.com; upgrade-insecure-requests",
+  );
+  response.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 }
 
 async function resolveAsset(pathname) {
@@ -83,6 +91,6 @@ const server = createServer(async (request, response) => {
     .pipe(response);
 });
 
-server.listen(port, '0.0.0.0', () => {
+server.listen(port, host, () => {
   console.log('Hansttoo web server running on port ' + port);
 });

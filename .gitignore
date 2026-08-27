@@ -2,6 +2,7 @@ node_modules/
 build/
 dist/
 coverage/
+.npm-cache/
 .DS_Store
 *.log
 .env*
@@ -10,3 +11,5 @@ coverage/
 scripts/*
 !scripts/generate-static-routes.mjs
 !scripts/optimize_portfolio_images.py
+fotosperfil/
+tattoos/

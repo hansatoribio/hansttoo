@@ -114,6 +114,12 @@ drop policy if exists inquiries_select_all on public.inquiries;
 drop policy if exists inquiries_insert_all on public.inquiries;
 drop policy if exists inquiries_update_all on public.inquiries;
 drop policy if exists inquiries_delete_all on public.inquiries;
+drop policy if exists "Permitir envíos públicos de consultas" on public.inquiries;
+drop policy if exists "Permitir lectura de consultas" on public.inquiries;
+drop policy if exists "Permitir actualizar estado de consultas" on public.inquiries;
+drop policy if exists inquiries_all on public.inquiries;
+drop policy if exists inquiries_admin_all on public.inquiries;
+drop policy if exists inquiries_public_insert on public.inquiries;
 drop policy if exists public_create_pending_inquiry on public.inquiries;
 drop policy if exists admin_read_inquiries on public.inquiries;
 drop policy if exists admin_update_inquiries on public.inquiries;
@@ -201,6 +207,9 @@ on conflict (id) do update set
 
 drop policy if exists storage_upload_public on storage.objects;
 drop policy if exists storage_select_public on storage.objects;
+drop policy if exists inquiry_images_public_insert on storage.objects;
+drop policy if exists inquiry_images_admin_read on storage.objects;
+drop policy if exists inquiry_images_admin_delete on storage.objects;
 drop policy if exists public_upload_inquiry_reference on storage.objects;
 drop policy if exists admin_read_inquiry_references on storage.objects;
 
