@@ -34,9 +34,9 @@ export interface Inquiry {
   sizeCm: number;
   description: string;
   referenceImage?: string | null; // For backward compatibility
-  referenceImages: string[]; // Support up to 5 reference images, min 1 required
+  referenceImages: string[]; // Up to 5 optional consultation references
   placementPhoto?: string | null; // Photo of the placement area
-  preferredContactMethod?: 'whatsapp' | 'email';
+  preferredContactMethod?: 'email' | 'instagram' | 'phone' | 'whatsapp';
   status: InquiryStatus;
   createdAt: string;
   artistNotes?: string;

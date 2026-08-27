@@ -1,167 +1,50 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, ChevronUp, HelpCircle, PenTool, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { Language } from '../types';
-import { translations } from '../translations';
 
-interface FAQProps {
-  language: Language;
-  faqList: Array<{ id: string; qEn: string; qEs: string; aEn: string; aEs: string }>;
-  isVisualEditMode?: boolean;
-  onEditElement?: (type: 'text' | 'image' | 'portfolio' | 'faq' | 'new-faq', key: string, label?: string, data?: any) => void;
-  customTranslations?: any;
-}
+interface FAQProps { language: Language }
 
-export default function FAQ({ 
-  language,
-  faqList,
-  isVisualEditMode = false,
-  onEditElement,
-  customTranslations
-}: FAQProps) {
-  const t = customTranslations?.[language] || translations[language] || translations.en;
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+const questions = {
+  en: [
+    ['Is submitting the form a confirmed booking?', 'No. It is a consultation and availability request. Hans will review the project and contact you if it is a fit. An appointment is confirmed only after you agree on the details directly.'],
+    ['What information should I send?', 'Include the tattoo idea, preferred style, placement, and approximate width. Reference images are helpful but optional at this first step.'],
+    ['How is pricing determined?', 'Pricing depends on the design, size, placement, color, detail, and estimated session time. Hans will discuss a quote after reviewing enough project information.'],
+    ['Where are appointments held?', 'Appointments are at Gara Art Studio, 240 W 40th St, New York, NY 10018. Hans works there as an independent resident artist and does not own the studio.'],
+    ['Can I request a custom anime or manga design?', 'Yes. You can share the character, panel, visual direction, placement, and size you have in mind. Final design details are discussed during the consultation.'],
+  ],
+  es: [
+    ['¿Enviar el formulario confirma una cita?', 'No. Es una solicitud de consulta y disponibilidad. Hans revisará el proyecto y te contactará si encaja. La cita solo queda confirmada después de acordar los detalles directamente.'],
+    ['¿Qué información debo enviar?', 'Incluye la idea, estilo, zona y ancho aproximado. Las imágenes de referencia ayudan, pero son opcionales en este primer paso.'],
+    ['¿Cómo se determina el precio?', 'El precio depende del diseño, tamaño, zona, color, detalle y tiempo estimado. Hans hablará del presupuesto después de revisar suficiente información del proyecto.'],
+    ['¿Dónde se realizan las citas?', 'Las citas son en Gara Art Studio, 240 W 40th St, New York, NY 10018. Hans trabaja allí como artista residente independiente y no es dueño del estudio.'],
+    ['¿Puedo solicitar un diseño personalizado de anime o manga?', 'Sí. Comparte el personaje, panel, dirección visual, zona y tamaño que tienes en mente. Los detalles finales se hablan durante la consulta.'],
+  ],
+};
 
-  const handleToggle = (index: number) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
-
+export default function FAQ({ language }: FAQProps) {
+  const [openIndex, setOpenIndex] = useState(0);
   return (
-    <section className="pt-8 sm:pt-12 pb-20 sm:pb-28 bg-[#FCFBFA] border-b border-stone-100" id="faq">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
-        
-        {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16 space-y-2">
-          <span
-            onClick={() => {
-              if (isVisualEditMode && onEditElement) {
-                onEditElement('text', 'faqBadge', 'FAQ Section Badge', {
-                  en: customTranslations?.en?.faqBadge || 'COMMON QUESTIONS',
-                  es: customTranslations?.es?.faqBadge || 'PREGUNTAS COMUNES'
-                });
-              }
-            }}
-            className={`text-[10px] font-black tracking-[0.25em] text-[#E53E3E] uppercase inline-flex items-center justify-center gap-1 ${
-              isVisualEditMode ? 'cursor-pointer hover:underline' : ''
-            }`}
-          >
-            {isVisualEditMode && <PenTool className="w-3.5 h-3.5" />}
-            {customTranslations?.[language]?.faqBadge || (language === 'en' ? 'COMMON QUESTIONS' : 'PREGUNTAS COMUNES')}
-          </span>
-          <h2
-            onClick={() => {
-              if (isVisualEditMode && onEditElement) {
-                onEditElement('text', 'faqTitle', 'FAQ Section Title', {
-                  en: customTranslations?.en?.faqTitle || translations.en.faqTitle,
-                  es: customTranslations?.es?.faqTitle || translations.es.faqTitle
-                });
-              }
-            }}
-            className={`text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tighter uppercase leading-none ${
-              isVisualEditMode ? 'cursor-pointer border border-dashed border-amber-400 p-2 rounded-xl bg-amber-50/20' : ''
-            }`}
-          >
-            {t.faqTitle || translations[language].faqTitle}<span className="text-[#E53E3E]">.</span>
-          </h2>
-          <p
-            onClick={() => {
-              if (isVisualEditMode && onEditElement) {
-                onEditElement('text', 'faqSubtitle', 'FAQ Section Subtitle', {
-                  en: customTranslations?.en?.faqSubtitle || translations.en.faqSubtitle,
-                  es: customTranslations?.es?.faqSubtitle || translations.es.faqSubtitle
-                });
-              }
-            }}
-            className={`text-stone-500 text-sm mt-3 leading-relaxed font-sans ${
-              isVisualEditMode ? 'cursor-pointer border border-dashed border-amber-400 p-1.5 rounded-lg bg-amber-50/20' : ''
-            }`}
-          >
-            {t.faqSubtitle || translations[language].faqSubtitle}
-          </p>
-        </div>
-
-        {/* Collapsible Accordion Grid */}
-        <div className="space-y-4" id="faq-accordion">
-          {faqList.map((item, idx) => {
-            const isOpen = openIndex === idx;
-            const questionText = language === 'en' ? item.qEn : item.qEs;
-            const answerText = language === 'en' ? item.aEn : item.aEs;
-
+    <section id="faq" className="bg-white py-16 sm:py-24">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6">
+        <p className="text-xs font-black tracking-[0.24em] text-[#C9362B]">{language === 'en' ? 'FAQ' : 'PREGUNTAS FRECUENTES'}</p>
+        <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-6xl">{language === 'en' ? 'Before you request.' : 'Antes de solicitar.'}</h2>
+        <div className="mt-10 divide-y divide-stone-200 border-y border-stone-200">
+          {questions[language].map(([question, answer], index) => {
+            const isOpen = openIndex === index;
             return (
-              <div 
-                key={item.id} 
-                className={`border rounded-2xl bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative ${
-                  isVisualEditMode
-                    ? 'border-dashed border-amber-400 hover:border-amber-600'
-                    : 'border-stone-100'
-                }`}
-                id={`faq-item-${item.id}`}
-              >
-                {/* Header click bar */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isVisualEditMode) {
-                      onEditElement?.('faq', 'item', 'Edit FAQ Question', item);
-                    } else {
-                      handleToggle(idx);
-                    }
-                  }}
-                  className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-stone-50/55 transition-colors cursor-pointer"
-                  id={`faq-btn-${item.id}`}
-                >
-                  <div className="flex items-start space-x-3 pr-4">
-                    <HelpCircle className="w-5 h-5 text-[#E53E3E] mt-0.5 flex-shrink-0" />
-                    <span className="text-sm sm:text-md font-bold text-[#1A1A1A] uppercase tracking-tight leading-snug">
-                      {questionText}
-                    </span>
-                  </div>
-                  <div className="text-stone-400">
-                    {isVisualEditMode ? (
-                      <div className="flex items-center space-x-1 bg-amber-500 text-white text-[9px] font-black px-2 py-1 rounded-md uppercase tracking-wider shadow-sm z-10">
-                        <PenTool className="w-2.5 h-2.5" />
-                        <span>Edit</span>
-                      </div>
-                    ) : isOpen ? (
-                      <ChevronUp className="w-4 h-4 text-stone-800" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-stone-800" />
-                    )}
-                  </div>
-                </button>
-
-                {/* Collapsible Content */}
-                <AnimatePresence initial={false}>
-                  {isOpen && !isVisualEditMode && (
-                    <motion.div
-                      initial={{ height: 0 }}
-                      animate={{ height: "auto" }}
-                      exit={{ height: 0 }}
-                      transition={{ duration: 0.2, ease: "easeInOut" }}
-                    >
-                      <div className="px-6 pb-6 pt-2 border-t border-stone-100 text-xs sm:text-sm text-stone-600 leading-relaxed font-sans bg-stone-50/30">
-                        {answerText}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+              <div key={question}>
+                <h3>
+                  <button onClick={() => setOpenIndex(isOpen ? -1 : index)} className="flex min-h-16 w-full items-center justify-between gap-6 py-4 text-left text-base font-black sm:text-lg" aria-expanded={isOpen} aria-controls={'faq-panel-' + index}>
+                    {question}<ChevronDown className={'h-5 w-5 shrink-0 transition-transform ' + (isOpen ? 'rotate-180' : '')} aria-hidden="true" />
+                  </button>
+                </h3>
+                <div id={'faq-panel-' + index} hidden={!isOpen} className="pb-5 pr-10 text-sm leading-6 text-stone-600 sm:text-base">
+                  {answer}
+                </div>
               </div>
             );
           })}
-
-          {/* Add New FAQ Action Button when Visual Edit Mode is Active */}
-          {isVisualEditMode && (
-            <button
-              onClick={() => onEditElement?.('new-faq', 'new-faq-item', 'Add FAQ Question', {})}
-              className="w-full py-4.5 border-2 border-dashed border-[#E53E3E] rounded-2xl bg-rose-50/10 hover:bg-rose-50/30 text-stone-850 hover:text-[#E53E3E] flex items-center justify-center space-x-2 text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-sm"
-              id="faq-add-new-btn"
-            >
-              <Plus className="w-4 h-4 text-[#E53E3E]" />
-              <span>{language === 'en' ? 'Add New FAQ Question' : 'Añadir Pregunta FAQ'}</span>
-            </button>
-          )}
         </div>
-
       </div>
     </section>
   );

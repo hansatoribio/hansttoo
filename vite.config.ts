@@ -27,10 +27,8 @@ export default defineConfig(() => {
         output: {
           manualChunks: {
             'vendor-react': ['react', 'react-dom'],
-            'vendor-motion': ['motion'],
             'vendor-icons': ['lucide-react'],
-            'vendor-supabase': ['@supabase/supabase-js'],
-            'vendor-charts': ['recharts']
+            'vendor-supabase': ['@supabase/supabase-js']
           }
         }
       }

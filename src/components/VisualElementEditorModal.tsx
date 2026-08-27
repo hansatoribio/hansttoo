@@ -380,7 +380,7 @@ export default function VisualElementEditorModal({
                       setMediaType('image');
                     }
                   }}
-                  placeholder="https://images.unsplash.com/... or Google Drive video link"
+                  placeholder="/verified-portfolio-image.webp or Google Drive video link"
                   className="w-full px-4 py-3 rounded-2xl border border-stone-200 focus:border-stone-400 bg-white text-xs text-stone-850 outline-none transition-all"
                 />
               </div>
@@ -543,7 +543,7 @@ export default function VisualElementEditorModal({
                       setMediaType('image');
                     }
                   }}
-                  placeholder="https://images.unsplash.com/... or Google Drive video link"
+                  placeholder="/verified-portfolio-image.webp or Google Drive video link"
                   className="w-full px-4 py-3 rounded-2xl border border-stone-200 focus:border-stone-400 bg-white text-xs text-stone-850 outline-none"
                 />
               </div>

@@ -1,179 +1,113 @@
--- ==============================================================================
--- HANS TATTOO (@hansttoo) - ESQUEMA COMPLETO DE BASE DE DATOS SUPABASE
--- ==============================================================================
--- Copia y pega este script en: Supabase Dashboard > SQL Editor > Run
--- Este script crea todas las tablas requeridas, activa la seguridad RLS,
--- crea las políticas de acceso y almacena la clave de administración en Supabase.
--- ==============================================================================
+-- Hansttoo consultation storage — review before running manually.
+-- This file is intentionally NOT applied by the website build.
+-- Public visitors may create a pending inquiry and upload private references.
+-- They may not read, update, or delete inquiry, subscriber, or admin data.
 
--- 1. TABLA DE CONSULTAS Y COTIZACIONES (INQUIRIES)
-CREATE TABLE IF NOT EXISTS public.inquiries (
-    id TEXT PRIMARY KEY,
-    full_name TEXT NOT NULL,
-    email TEXT NOT NULL,
-    phone TEXT,
-    instagram TEXT,
-    preferred_contact_method TEXT DEFAULT 'whatsapp',
-    style TEXT,
-    color_type TEXT DEFAULT 'black_and_grey',
-    placement TEXT,
-    placement_photo TEXT,
-    size_cm NUMERIC,
-    description TEXT,
-    reference_images TEXT[],
-    reference_image TEXT,
-    status TEXT DEFAULT 'pending',
-    artist_notes TEXT,
-    medical_notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+create table if not exists public.inquiries (
+  id text primary key,
+  full_name text not null,
+  email text,
+  phone text,
+  instagram text,
+  preferred_contact_method text not null default 'email',
+  style text not null,
+  color_type text,
+  placement text not null,
+  placement_photo text,
+  size_cm numeric not null,
+  description text not null,
+  reference_images text[] not null default '{}',
+  reference_image text,
+  status text not null default 'pending',
+  artist_notes text,
+  medical_notes text,
+  created_at timestamptz not null default now(),
+  constraint inquiries_contact_present check (
+    nullif(btrim(coalesce(email, '')), '') is not null
+    or nullif(btrim(coalesce(phone, '')), '') is not null
+    or nullif(btrim(coalesce(instagram, '')), '') is not null
+  ),
+  constraint inquiries_preferred_contact_valid check (preferred_contact_method in ('email', 'instagram', 'phone', 'whatsapp')),
+  constraint inquiries_style_valid check (style in ('anime', 'microrealism', 'fineline', 'other')),
+  constraint inquiries_status_valid check (status in ('pending', 'contacted', 'replied', 'booked', 'completed', 'declined')),
+  constraint inquiries_size_valid check (size_cm between 1.3 and 127),
+  constraint inquiries_name_length check (char_length(full_name) between 1 and 120),
+  constraint inquiries_description_length check (char_length(description) between 15 and 5000),
+  constraint inquiries_reference_count check (cardinality(reference_images) <= 5)
 );
 
--- 2. TABLA DE CONFIGURACIÓN Y CLAVE DE ADMINISTRADOR (ADMIN_SETTINGS)
--- Aquí se guarda la clave del panel de administración (NO hardcodeada en el código)
-CREATE TABLE IF NOT EXISTS public.admin_settings (
-    id TEXT PRIMARY KEY DEFAULT 'main',
-    admin_passcode TEXT NOT NULL DEFAULT 'hans2026',
-    recovery_email TEXT DEFAULT 'tattoobyhans@gmail.com',
-    seo_title TEXT DEFAULT 'Hans Tattoo | Fine Line & Microrealism Artist New York',
-    seo_description TEXT DEFAULT 'Fine line tattoo artist and anime craft specialist based in New York. Book bespoke custom consultations.',
-    seo_keywords TEXT DEFAULT 'fine line tattoo, anime tattoo, microrealism, new york tattoo artist, bespoke tattoo design',
-    meta_pixel_id TEXT DEFAULT '',
-    google_analytics_id TEXT DEFAULT '',
-    instagram_username TEXT DEFAULT 'hansttoo',
-    instagram_widget_url TEXT DEFAULT '',
-    map_open_hour NUMERIC DEFAULT 11,
-    map_close_hour NUMERIC DEFAULT 20,
-    map_schedule_text TEXT DEFAULT 'Tue - Sat: 11:00 AM - 8:00 PM (By Appointment Only)',
-    map_address_line1 TEXT DEFAULT 'Midtown Atelier Studio, 5th Ave',
-    map_address_line2 TEXT DEFAULT 'New York, NY 10018',
-    map_google_maps_url TEXT DEFAULT 'https://maps.google.com/?q=Midtown+Manhattan+New+York',
-    custom_translations JSONB DEFAULT '{}'::jsonb,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+alter table public.inquiries enable row level security;
+alter table public.inquiries alter column email drop not null;
+
+drop policy if exists inquiries_select_all on public.inquiries;
+drop policy if exists inquiries_insert_all on public.inquiries;
+drop policy if exists inquiries_update_all on public.inquiries;
+drop policy if exists inquiries_delete_all on public.inquiries;
+drop policy if exists public_create_pending_inquiry on public.inquiries;
+
+revoke all on table public.inquiries from anon, authenticated;
+grant insert on table public.inquiries to anon;
+
+create policy public_create_pending_inquiry
+on public.inquiries
+for insert
+to anon
+with check (
+  status = 'pending'
+  and artist_notes is null
+  and medical_notes is null
+  and created_at <= now() + interval '5 minutes'
+  and char_length(full_name) between 1 and 120
+  and char_length(description) between 15 and 5000
+  and cardinality(reference_images) <= 5
 );
 
--- Insertar configuración inicial por defecto si no existe
-INSERT INTO public.admin_settings (id, admin_passcode, recovery_email)
-VALUES ('main', 'hans2026', 'tattoobyhans@gmail.com')
-ON CONFLICT (id) DO NOTHING;
+-- Disable the legacy browser-readable admin/settings paths when those tables exist.
+do $$
+begin
+  if to_regclass('public.admin_settings') is not null then
+    execute 'alter table public.admin_settings enable row level security';
+    execute 'drop policy if exists admin_settings_select_all on public.admin_settings';
+    execute 'drop policy if exists admin_settings_update_all on public.admin_settings';
+    execute 'drop policy if exists admin_settings_insert_all on public.admin_settings';
+    execute 'revoke all on table public.admin_settings from anon, authenticated';
+  end if;
 
--- 3. TABLA DE SUSCRIPTORES / LISTA DE ESPERA (SUBSCRIBERS)
-CREATE TABLE IF NOT EXISTS public.subscribers (
-    id TEXT PRIMARY KEY,
-    email TEXT UNIQUE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  if to_regclass('public.subscribers') is not null then
+    execute 'alter table public.subscribers enable row level security';
+    execute 'drop policy if exists subscribers_select_all on public.subscribers';
+    execute 'drop policy if exists subscribers_insert_all on public.subscribers';
+    execute 'drop policy if exists subscribers_delete_all on public.subscribers';
+    execute 'revoke all on table public.subscribers from anon, authenticated';
+  end if;
+end $$;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'inquiry-images',
+  'inquiry-images',
+  false,
+  5242880,
+  array['image/jpeg', 'image/png', 'image/webp']
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists storage_upload_public on storage.objects;
+drop policy if exists storage_select_public on storage.objects;
+drop policy if exists public_upload_inquiry_reference on storage.objects;
+
+create policy public_upload_inquiry_reference
+on storage.objects
+for insert
+to anon
+with check (
+  bucket_id = 'inquiry-images'
+  and (storage.foldername(name))[1] = 'uploads'
 );
 
--- 4. TABLA DE PIEZAS DEL PORTAFOLIO (PORTFOLIO_ITEMS)
-CREATE TABLE IF NOT EXISTS public.portfolio_items (
-    id TEXT PRIMARY KEY,
-    title_en TEXT,
-    title_es TEXT,
-    style TEXT DEFAULT 'fineline',
-    image_url TEXT NOT NULL,
-    media_type TEXT DEFAULT 'image',
-    size TEXT,
-    duration TEXT,
-    recovery_days NUMERIC DEFAULT 10,
-    story_en TEXT,
-    story_es TEXT,
-    featured BOOLEAN DEFAULT true,
-    sort_order NUMERIC DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 5. TABLA DE PREGUNTAS FRECUENTES (FAQS)
-CREATE TABLE IF NOT EXISTS public.faqs (
-    id TEXT PRIMARY KEY,
-    question_en TEXT NOT NULL,
-    question_es TEXT NOT NULL,
-    answer_en TEXT NOT NULL,
-    answer_es TEXT NOT NULL,
-    category TEXT DEFAULT 'booking',
-    sort_order NUMERIC DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- ==============================================================================
--- HABILITAR SEGURIDAD POR FILA (ROW LEVEL SECURITY - RLS) EN TODAS LAS TABLAS
--- ==============================================================================
-ALTER TABLE public.inquiries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.admin_settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.subscribers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.portfolio_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.faqs ENABLE ROW LEVEL SECURITY;
-
--- POLÍTICAS PARA INQUIRIES
-DROP POLICY IF EXISTS "inquiries_select_all" ON public.inquiries;
-CREATE POLICY "inquiries_select_all" ON public.inquiries FOR SELECT TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS "inquiries_insert_all" ON public.inquiries;
-CREATE POLICY "inquiries_insert_all" ON public.inquiries FOR INSERT TO anon, authenticated WITH CHECK (true);
-
-DROP POLICY IF EXISTS "inquiries_update_all" ON public.inquiries;
-CREATE POLICY "inquiries_update_all" ON public.inquiries FOR UPDATE TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS "inquiries_delete_all" ON public.inquiries;
-CREATE POLICY "inquiries_delete_all" ON public.inquiries FOR DELETE TO anon, authenticated USING (true);
-
--- POLÍTICAS PARA ADMIN_SETTINGS
-DROP POLICY IF EXISTS "admin_settings_select_all" ON public.admin_settings;
-CREATE POLICY "admin_settings_select_all" ON public.admin_settings FOR SELECT TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS "admin_settings_update_all" ON public.admin_settings;
-CREATE POLICY "admin_settings_update_all" ON public.admin_settings FOR UPDATE TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS "admin_settings_insert_all" ON public.admin_settings;
-CREATE POLICY "admin_settings_insert_all" ON public.admin_settings FOR INSERT TO anon, authenticated WITH CHECK (true);
-
--- POLÍTICAS PARA SUBSCRIBERS
-DROP POLICY IF EXISTS "subscribers_select_all" ON public.subscribers;
-CREATE POLICY "subscribers_select_all" ON public.subscribers FOR SELECT TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS "subscribers_insert_all" ON public.subscribers;
-CREATE POLICY "subscribers_insert_all" ON public.subscribers FOR INSERT TO anon, authenticated WITH CHECK (true);
-
-DROP POLICY IF EXISTS "subscribers_delete_all" ON public.subscribers;
-CREATE POLICY "subscribers_delete_all" ON public.subscribers FOR DELETE TO anon, authenticated USING (true);
-
--- POLÍTICAS PARA PORTFOLIO_ITEMS
-DROP POLICY IF EXISTS "portfolio_select_all" ON public.portfolio_items;
-CREATE POLICY "portfolio_select_all" ON public.portfolio_items FOR SELECT TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS "portfolio_insert_all" ON public.portfolio_items;
-CREATE POLICY "portfolio_insert_all" ON public.portfolio_items FOR INSERT TO anon, authenticated WITH CHECK (true);
-
-DROP POLICY IF EXISTS "portfolio_update_all" ON public.portfolio_items;
-CREATE POLICY "portfolio_update_all" ON public.portfolio_items FOR UPDATE TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS "portfolio_delete_all" ON public.portfolio_items;
-CREATE POLICY "portfolio_delete_all" ON public.portfolio_items FOR DELETE TO anon, authenticated USING (true);
-
--- POLÍTICAS PARA FAQS
-DROP POLICY IF EXISTS "faqs_select_all" ON public.faqs;
-CREATE POLICY "faqs_select_all" ON public.faqs FOR SELECT TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS "faqs_insert_all" ON public.faqs;
-CREATE POLICY "faqs_insert_all" ON public.faqs FOR INSERT TO anon, authenticated WITH CHECK (true);
-
-DROP POLICY IF EXISTS "faqs_update_all" ON public.faqs;
-CREATE POLICY "faqs_update_all" ON public.faqs FOR UPDATE TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS "faqs_delete_all" ON public.faqs;
-CREATE POLICY "faqs_delete_all" ON public.faqs FOR DELETE TO anon, authenticated USING (true);
-
--- ==============================================================================
--- BUCKET DE ALMACENAMIENTO (STORAGE BUCKET: inquiry-images)
--- ==============================================================================
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('inquiry-images', 'inquiry-images', true)
-ON CONFLICT (id) DO NOTHING;
-
-DROP POLICY IF EXISTS "storage_upload_public" ON storage.objects;
-CREATE POLICY "storage_upload_public" ON storage.objects
-FOR INSERT TO anon, authenticated
-WITH CHECK (bucket_id = 'inquiry-images');
-
-DROP POLICY IF EXISTS "storage_select_public" ON storage.objects;
-CREATE POLICY "storage_select_public" ON storage.objects
-FOR SELECT TO anon, authenticated
-USING (bucket_id = 'inquiry-images');
+-- No anonymous SELECT policy is created: reference images remain private.
+-- Review leads and files through the authenticated Supabase Dashboard, or add a
+-- separately authenticated server-side admin workflow before restoring an admin UI.

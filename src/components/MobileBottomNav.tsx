@@ -1,116 +1,27 @@
-import { useState, useEffect } from 'react';
-import { Home, Grid, Sparkles, HelpCircle } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Images, MapPin, MessageSquareText } from 'lucide-react';
 import { Language } from '../types';
-import { translations } from '../translations';
 
 interface MobileBottomNavProps {
   language: Language;
-  onNavigate: (sectionId: string) => void;
-  isAdminMode: boolean;
-  setIsAdminMode: (admin: boolean) => void;
+  onNavigate: (section: string) => void;
 }
 
-export default function MobileBottomNav({
-  language,
-  onNavigate,
-  isAdminMode,
-  setIsAdminMode,
-}: MobileBottomNavProps) {
-  const t = translations[language];
-  const [activeTab, setActiveTab] = useState<string>('hero');
-
-  // Track scroll position to update active tab highlight dynamically
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollPos = window.scrollY + 200;
-      
-      const faqEl = document.getElementById('faq');
-      const portfolioEl = document.getElementById('portfolio');
-      const bookingEl = document.getElementById('booking');
-
-      if (faqEl && scrollPos >= faqEl.offsetTop - 150) {
-        setActiveTab('faq');
-      } else if (portfolioEl && scrollPos >= portfolioEl.offsetTop - 150) {
-        setActiveTab('portfolio');
-      } else if (bookingEl && scrollPos >= bookingEl.offsetTop - 150) {
-        setActiveTab('booking');
-      } else {
-        setActiveTab('hero');
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const handleTabClick = (id: string) => {
-    if (isAdminMode) {
-      setIsAdminMode(false);
-    }
-    setActiveTab(id);
-    setTimeout(() => {
-      onNavigate(id);
-    }, 50);
-  };
-
-  const navTabs = [
-    {
-      id: 'hero',
-      label: t.tabHome || 'Home',
-      icon: Home,
-    },
-    {
-      id: 'portfolio',
-      label: t.tabGallery || 'Gallery',
-      icon: Grid,
-    },
-    {
-      id: 'booking',
-      label: t.tabBook || 'Book',
-      icon: Sparkles,
-    },
-    {
-      id: 'faq',
-      label: t.tabFAQ || 'FAQ',
-      icon: HelpCircle,
-    },
+export default function MobileBottomNav({ language, onNavigate }: MobileBottomNavProps) {
+  const items = [
+    { id: 'portfolio', icon: Images, en: 'Work', es: 'Trabajos' },
+    { id: 'booking', icon: MessageSquareText, en: 'Consult', es: 'Consulta', primary: true },
+    { id: 'location', icon: MapPin, en: 'Location', es: 'Ubicación' },
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-stone-200/70 shadow-[0_-2px_12px_rgba(0,0,0,0.04)] pb-safe transition-all duration-300">
-      <div className="flex items-center justify-around px-2 py-1 max-w-md mx-auto">
-        {navTabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-
-          return (
-            <motion.button
-              key={tab.id}
-              whileTap={{ scale: 0.94 }}
-              onClick={() => handleTabClick(tab.id)}
-              className="flex flex-col items-center justify-center flex-1 py-0.5 px-1 cursor-pointer select-none transition-colors"
-              id={`mobile-tab-${tab.id}`}
-            >
-              <Icon
-                className={`w-[18px] h-[18px] transition-all duration-200 ${
-                  isActive
-                    ? 'text-stone-900 scale-105 stroke-[2.25px]'
-                    : 'text-stone-400 hover:text-stone-600 stroke-[1.75px]'
-                }`}
-              />
-              <span
-                className={`text-[8.5px] uppercase tracking-wider transition-colors mt-0.5 ${
-                  isActive ? 'text-stone-900 font-extrabold' : 'text-stone-400 font-medium'
-                }`}
-              >
-                {tab.label}
-              </span>
-            </motion.button>
-          );
-        })}
+    <nav aria-label={language === 'en' ? 'Mobile quick navigation' : 'Navegación rápida móvil'} className="fixed inset-x-3 bottom-3 z-40 rounded-2xl border border-stone-200 bg-white/95 p-2 shadow-2xl backdrop-blur-xl md:hidden pb-safe">
+      <div className="grid grid-cols-3 gap-1">
+        {items.map(({ id, icon: Icon, en, es, primary }) => (
+          <button key={id} onClick={() => onNavigate(id)} className={'flex min-h-12 flex-col items-center justify-center rounded-xl text-[10px] font-black uppercase tracking-wide ' + (primary ? 'bg-[#E53E3E] text-white' : 'text-stone-700 hover:bg-stone-100')}>
+            <Icon className="mb-1 h-4 w-4" aria-hidden="true" />{language === 'en' ? en : es}
+          </button>
+        ))}
       </div>
     </nav>
   );
 }
-

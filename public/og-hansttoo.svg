@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
+  <title id="title">Hansttoo — Hans, NYC Tattoo Artist</title>
+  <desc id="description">A black and warm white branded social card with Hansttoo wordmark and Midtown Manhattan appointment details.</desc>
+  <rect width="1200" height="630" fill="#171412"/>
+  <circle cx="1040" cy="70" r="260" fill="none" stroke="#ffffff" stroke-opacity=".09" stroke-width="2"/>
+  <circle cx="110" cy="620" r="300" fill="none" stroke="#ffffff" stroke-opacity=".09" stroke-width="2"/>
+  <rect x="70" y="60" width="1060" height="510" rx="32" fill="none" stroke="#ffffff" stroke-opacity=".14" stroke-width="2"/>
+  <text x="110" y="150" fill="#F2A6A0" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" letter-spacing="6">HANS | NYC TATTOO ARTIST</text>
+  <text x="103" y="335" fill="#FCFBFA" font-family="Arial, Helvetica, sans-serif" font-size="142" font-weight="900" letter-spacing="-10">hansttoo.</text>
+  <text x="110" y="420" fill="#D6D3D1" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="700">ANIME · MICROREALISM · FINE LINE</text>
+  <text x="110" y="505" fill="#A8A29E" font-family="Arial, Helvetica, sans-serif" font-size="23">Resident artist at Gara Art Studio · Midtown Manhattan</text>
+  <circle cx="1085" cy="515" r="13" fill="#E53E3E"/>
+</svg>

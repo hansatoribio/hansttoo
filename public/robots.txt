@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /thank-you
 
-Sitemap: https://hansttoo.com/sitemap.xml
+Sitemap: https://hansttoo.vercel.app/sitemap.xml

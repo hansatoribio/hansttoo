@@ -1,20 +1,40 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Hansttoo
 
-# Run and deploy your AI Studio app
+Conversion-focused website for **Hans | NYC Tattoo Artist** (`@hansttoo`), an independent resident artist taking appointments at Gara Art Studio, 240 W 40th St, New York, NY 10018.
 
-This contains everything you need to run your app locally.
+## Local development
 
-View your app in AI Studio: https://ai.studio/apps/55ccb4a8-3ee6-4ba5-bf58-df5b3fc6a5f4
+Requirements: Node.js 22 or newer.
 
-## Run Locally
+```bash
+npm ci
+npm run dev
+```
 
-**Prerequisites:**  Node.js
+Quality checks:
 
+```bash
+npm run lint
+npm run test
+npm run build
+```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Consultation form configuration
+
+Copy `.env.example` to `.env.local` and add only the public Supabase project URL and public publishable/anon key for this repository’s approved project. Never put a `service_role` or secret key in a `VITE_` variable; Vite exposes these values to browsers.
+
+The form fails visibly when Supabase is not configured. It does not pretend a lead was delivered and does not store consultation data in local storage.
+
+The reviewed SQL in `supabase_schema.sql` is not applied automatically. Hans must review and apply it through the official Supabase interface before production use. It limits anonymous users to creating pending inquiries and uploading private reference images. It removes the legacy anonymous read/update/delete policies. Applying it can disable the old browser-based admin dashboard; review leads through the Supabase Dashboard until a separately authenticated admin backend exists.
+
+## Conversion measurement
+
+See `docs/launch-checklist.md` for the exact Google and Meta identifiers required and the pre-launch test procedure.
+
+## Deployment
+
+`npm run build` creates the static client in `dist/`. `server.js` serves that directory and falls back to `index.html` for `/privacy` and `/thank-you`. `discloud.config` is the only deployment configuration checked into this repository. No deployment is performed by the build or verification scripts.
+
+## Portfolio assets
+
+The repository’s current local tattoo/artist files are byte-corrupted and cannot be rendered reliably. The public site therefore does not display them or any stock substitutes. Add verified original files before enabling an on-site image gallery. Until then, the Selected Work section links to Hans’s official Instagram.

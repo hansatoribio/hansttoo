@@ -1,9 +1,10 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Inquiry } from '../types';
 
-// Environment variables with pre-configured production defaults
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jvgcbakgrdvndfkxhaeg.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_xakUorZEOsWpmtAHjRZDSw_Gn8Ak6kj';
+// Public browser configuration must be supplied by the deployment environment.
+// Never fall back to a project URL or key checked into source control.
+const supabaseUrl = String(import.meta.env.VITE_SUPABASE_URL || '').trim();
+const supabaseAnonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
@@ -107,8 +108,7 @@ function base64ToBlob(base64Data: string): Blob {
  */
 export async function uploadImageToSupabase(imageData: string, fileNamePrefix: string = 'ref'): Promise<string> {
   if (!supabase) {
-    console.warn('Supabase is not configured. Using local base64 preview.');
-    return imageData;
+    throw new Error('Supabase is not configured.');
   }
 
   try {
@@ -138,16 +138,12 @@ export async function uploadImageToSupabase(imageData: string, fileNamePrefix: s
       throw error;
     }
 
-    // Get public URL
-    const { data: publicUrlData } = supabase.storage
-      .from('inquiry-images')
-      .getPublicUrl(filePath);
-
-    return publicUrlData.publicUrl;
+    // The bucket is private. Store only the object path; an authorized backend or
+    // project owner can create a short-lived signed URL when reviewing the lead.
+    return filePath;
   } catch (error) {
     console.error('Failed to upload image to Supabase Storage:', error);
-    // Fallback to original image data
-    return imageData;
+    throw error;
   }
 }
 
@@ -156,8 +152,7 @@ export async function uploadImageToSupabase(imageData: string, fileNamePrefix: s
  */
 export async function saveInquiryToSupabase(inquiry: Inquiry): Promise<{ success: boolean; data?: any; error?: any }> {
   if (!supabase) {
-    console.warn('Supabase not configured. Saved to local storage only.');
-    return { success: true };
+    return { success: false, error: new Error('Supabase is not configured.') };
   }
 
   try {
@@ -168,18 +163,12 @@ export async function saveInquiryToSupabase(inquiry: Inquiry): Promise<{ success
     }
 
     // 2. Upload reference images if present and in base64 format
-    const uploadedReferenceImages: string[] = [];
     const sourceImages = inquiry.referenceImages || (inquiry.referenceImage ? [inquiry.referenceImage] : []);
-
-    for (let i = 0; i < sourceImages.length; i++) {
-      const img = sourceImages[i];
-      if (img.startsWith('data:image/')) {
-        const uploadedUrl = await uploadImageToSupabase(img, `ref-${inquiry.id}-${i + 1}`);
-        uploadedReferenceImages.push(uploadedUrl);
-      } else {
-        uploadedReferenceImages.push(img);
-      }
-    }
+    const uploadedReferenceImages = await Promise.all(sourceImages.map((img, index) =>
+      img.startsWith('data:image/')
+        ? uploadImageToSupabase(img, `ref-${inquiry.id}-${index + 1}`)
+        : Promise.resolve(img)
+    ));
 
     // 3. Save record to PostgreSQL database
     const payload = {
@@ -203,8 +192,7 @@ export async function saveInquiryToSupabase(inquiry: Inquiry): Promise<{ success
 
     const { data, error } = await supabase
       .from('inquiries')
-      .insert([payload])
-      .select();
+      .insert([payload]);
 
     if (error) {
       console.error('Supabase DB Insert Error:', error);

@@ -24,21 +24,21 @@ export const translations = {
     heroCTAExplore: "View Gallery",
     statExperience: "Years",
     statTattoos: "Tattoos",
-    statRating: "Rating",
+    statRating: "NYC",
 
     // About Artist
     aboutBadge: "Meet the Artist",
     aboutTitle: "Hans Toribio",
     aboutSubtitle: "Fine Line • Microrealism • Custom Anime Specialist",
-    aboutBioP1: "I'm Hans Toribio, a Dominican-born tattoo artist based in New York City. I work as a resident artist at the renowned Gara Art Studio (located at 240 W 40th St, in the heart of Times Square, NYC), where I turn personal concepts, memories, and artistic passions into lasting body art.",
-    aboutBioP2: "My craft focuses primarily on three core specialties: high-definition microrealism, ultra-delicate fine line work, and custom anime & manga tattoo designs. With a warm, one-on-one client experience, I combine precise single-needle technique with strict surgical hygiene standards to craft clean, timeless tattoos that harmonize with your body.",
-    aboutPillar1Title: "Fine Line Mastery",
+    aboutBioP1: "I'm Hans, an independent tattoo artist based in New York City and a resident artist at Gara Art Studio, 240 W 40th St. I work with clients to translate personal ideas and visual references into custom tattoo concepts.",
+    aboutBioP2: "My work focuses on microrealism, fine-line tattooing, and custom anime and manga designs. Each consultation considers the requested style, placement, size, and the details that matter to the client.",
+    aboutPillar1Title: "Fine Line Focus",
     aboutPillar1Desc: "Delicate single-needle execution for weightless botanicals, fine script, and organic geometric flows.",
     aboutPillar2Title: "Anime & Manga Craft",
     aboutPillar2Desc: "Authentic panel adaptations, character portraits, and dynamic hand-hatched line weights honoring original comic art.",
     aboutPillar3Title: "Microrealism Precision",
     aboutPillar3Desc: "High-definition miniature portraiture and metallic gear mechanisms rendered with soft grey-wash gradients.",
-    aboutStudioLocation: "Times Square, New York • Gara Art Studio",
+    aboutStudioLocation: "Midtown Manhattan • Gara Art Studio",
     aboutCTABook: "Book Consultation",
     aboutCTAGallery: "View Gallery",
 
@@ -120,7 +120,7 @@ export const translations = {
     faqQ3: "What is the aftercare routine?",
     faqA3: "Keep the derm-shield on for 3-5 days. Wash gently with unscented soap and apply a very thin layer of neutral lotion twice daily. No swimming or direct sun for 2 weeks.",
     faqQ4: "Do you design custom pieces?",
-    faqA4: "Yes, all work is fully custom. I create unique compositions based on your reference images to fit your body contours perfectly.",
+    faqA4: "Yes. Share your references and goals so Hans can discuss a custom direction suited to the placement and requested style.",
 
     // Aftercare banner
     aftercareTitle: "Quick Care",
@@ -161,7 +161,7 @@ export const translations = {
 
     // Newsletter & Booking Slots Capture
     newsletterTitle: "Priority Booking & Guest Spots",
-    newsletterSubtitle: "Subscribe to get early notifications when booking slots open, exclusive schedule drops, and guest spot announcements in New York.",
+    newsletterSubtitle: "Subscribe for booking availability and schedule updates in New York.",
     newsletterPlaceholder: "Enter your email address",
     newsletterBtn: "Join Waiting List",
     newsletterSuccess: "You're on the list! We will notify you as soon as new slots or guest spots are announced.",
@@ -169,11 +169,11 @@ export const translations = {
 
     // Google Map Interactive Section
     mapTitle: "Gara Art Studio",
-    mapSubtitle: "Located at 240 W 40th St, Manhattan, New York City. Operating strictly by appointment only.",
+    mapSubtitle: "Appointments are at Gara Art Studio, 240 W 40th St, Manhattan, New York City.",
     mapStatus: "Studio Status",
-    mapHoursTitle: "Opening Hours",
-    mapOpenNow: "Open Now • Closes at 5:00 PM",
-    mapClosedNow: "Closed Now • Opens at 11:00 AM",
+    mapHoursTitle: "Appointments",
+    mapOpenNow: "Available by confirmed appointment",
+    mapClosedNow: "Request availability before visiting",
 
     // Footer
     footerTagline: "Fine line & high contrast storytelling at Gara Art Studio (240 W 40th St, New York).",
@@ -183,7 +183,7 @@ export const translations = {
     footerBilingualMsg: "Español disponible.",
     
     // Instagram Feed Section
-    instagramTitle: "Live Instagram Feed",
+    instagramTitle: "Selected Work",
     instagramSubtitle: "Follow @{username} for live session updates, fresh sketches, and behind-the-scenes tattoo process videos.",
     instagramFollowBtn: "Follow @{username}",
     instagramViewPost: "View on Instagram",
@@ -214,21 +214,21 @@ export const translations = {
     heroCTAExplore: "Ver Galería",
     statExperience: "Años",
     statTattoos: "Tatuajes",
-    statRating: "Valoración",
+    statRating: "NYC",
 
     // About Artist
     aboutBadge: "Conoce al Artista",
     aboutTitle: "Hans Toribio",
     aboutSubtitle: "Especialista en Línea Fina • Microrrealismo • Anime Personalizado",
-    aboutBioP1: "Soy Hans Toribio, artista del tatuaje de origen dominicano radicado en la ciudad de Nueva York. Me desempeño como artista residente en el reconocido Gara Art Studio (ubicado en 240 W 40th St, en pleno corazón de Times Square, NYC), un espacio donde transformo ideas, historias y pasiones en obras de arte permanentes grabadas en la piel.",
-    aboutBioP2: "Mi trabajo se enfoca principalmente en tres especialidades: microrrealismo de alta definición, trazos delicados de línea fina (fine line) y diseños personalizados de anime y manga. Con una atención cálida y personalizada en cada sesión, combino el control preciso de aguja única con estándares rigurosos de higiene para crear piezas elegantes que fluyen con tu anatomía y cicatrizan perfectamente con el tiempo.",
+    aboutBioP1: "Soy Hans, artista del tatuaje independiente en la ciudad de Nueva York y artista residente en Gara Art Studio, 240 W 40th St. Trabajo con cada cliente para convertir sus ideas y referencias en conceptos personalizados.",
+    aboutBioP2: "Mi trabajo se enfoca en microrrealismo, línea fina y diseños personalizados de anime y manga. Cada consulta considera el estilo solicitado, la zona, el tamaño y los detalles importantes para el cliente.",
     aboutPillar1Title: "Dominio de Línea Fina",
     aboutPillar1Desc: "Ejecución delicada con aguja única para botánica ingrávida, caligrafía fina y trazos geométricos orgánicos.",
     aboutPillar2Title: "Arte Anime y Manga",
     aboutPillar2Desc: "Adaptaciones fieles de paneles, retratos de personajes y tramas manuales dinámicas que honran el arte original.",
     aboutPillar3Title: "Precisión en Microrrealismo",
     aboutPillar3Desc: "Retratos en miniatura de alta definición y mecanismos metálicos renderizados con suaves escalas de grises.",
-    aboutStudioLocation: "Times Square, Nueva York • Gara Art Studio",
+    aboutStudioLocation: "Midtown Manhattan • Gara Art Studio",
     aboutCTABook: "Consulta con Hans",
     aboutCTAGallery: "Ver Galería",
 
@@ -310,7 +310,7 @@ export const translations = {
     faqQ3: "¿Cómo es el cuidado posterior?",
     faqA3: "Mantén el parche protector de 3 a 5 días. Luego lávalo con jabón neutro y aplica una capa muy delgada de crema neutra 2 veces al día. Evita el sol y piscinas por 2 semanas.",
     faqQ4: "¿Haces diseños personalizados?",
-    faqA4: "Sí, todos los tatuajes son 100% personalizados y exclusivos. Tomo tus referencias para crear una pieza adaptada perfectamente a tu cuerpo.",
+    faqA4: "Sí. Comparte tus referencias y objetivos para que Hans pueda hablar de una dirección personalizada adecuada a la zona y al estilo solicitado.",
 
     // Aftercare banner
     aftercareTitle: "Cuidado Rápido",
@@ -359,7 +359,7 @@ export const translations = {
 
     // Google Map Interactive Section
     mapTitle: "Gara Art Studio",
-    mapSubtitle: "Ubicado en 240 W 40th St, Manhattan, Nueva York. Atendemos estrictamente bajo cita previa.",
+    mapSubtitle: "Las citas son en Gara Art Studio, 240 W 40th St, Manhattan, Nueva York.",
     mapStatus: "Estado del Estudio",
     mapHoursTitle: "Horario de Atención",
     mapOpenNow: "Abierto Ahora • Cierra a las 5:00 PM",
@@ -373,7 +373,7 @@ export const translations = {
     footerBilingualMsg: "English version available.",
     
     // Instagram Feed Section
-    instagramTitle: "Feed de Instagram en Vivo",
+    instagramTitle: "Trabajo Seleccionado",
     instagramSubtitle: "Sigue a @{username} para ver actualizaciones de sesiones en vivo, bocetos frescos y videos del proceso de tatuaje detrás de escena.",
     instagramFollowBtn: "Seguir a @{username}",
     instagramViewPost: "Ver en Instagram",

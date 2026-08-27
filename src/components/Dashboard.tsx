@@ -458,7 +458,7 @@ export default function Dashboard({
 
   // Synced state for Hans's Business WhatsApp Number
   const [artistWhatsApp, setArtistWhatsApp] = useState<string>(() => {
-    return localStorage.getItem('hans_artist_whatsapp') || '16462709292';
+    return localStorage.getItem('hans_artist_whatsapp') || String(import.meta.env.VITE_ARTIST_WHATSAPP || '').replace(/[^0-9]/g, '');
   });
 
   useEffect(() => {
@@ -487,7 +487,7 @@ export default function Dashboard({
   const [draftDesc, setDraftDesc] = useState(seoDescription);
   const [draftKeywords, setDraftKeywords] = useState(seoKeywords);
   const [draftOgImage, setDraftOgImage] = useState(() => {
-    return localStorage.getItem('hans_seo_og_image') || 'https://images.unsplash.com/photo-1598104358204-87cefc7c5986?auto=format&fit=crop&q=80&w=600';
+    return localStorage.getItem('hans_seo_og_image') || '/og-hansttoo.svg';
   });
 
   useEffect(() => {
@@ -2720,13 +2720,13 @@ export default function Dashboard({
                   type="text"
                   value={artistWhatsApp}
                   onChange={(e) => setArtistWhatsApp(e.target.value.replace(/[^0-9]/g, ''))}
-                  placeholder="e.g. 16462709292"
+                  placeholder="e.g. 12125550123"
                   className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-850 text-xs font-semibold focus:bg-white focus:outline-none focus:ring-4 focus:ring-stone-100 transition-all font-mono"
                 />
                 <p className="text-[9px] text-stone-400 mt-1 leading-relaxed">
                   {language === 'en'
                     ? 'Official business WhatsApp number for direct incoming customer messages (include country code, digits only).'
-                    : 'Número oficial con código de país, solo números (ej: 34600123456 o 16462709292). Se sincroniza automáticamente con el formulario de clientes.'}
+                    : 'Número oficial con código de país, solo números (ej: 12125550123). Se sincroniza automáticamente con el formulario de clientes.'}
                 </p>
               </div>
             </div>
@@ -2784,7 +2784,7 @@ export default function Dashboard({
                   rows={2}
                   value={seoDescription}
                   onChange={(e) => setSeoDescription(e.target.value)}
-                  placeholder="Exclusive private tattoo studio in Madrid..."
+                  placeholder="Independent tattoo artist taking appointments in Madrid..."
                   className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-850 text-xs font-semibold focus:bg-white focus:outline-none focus:ring-4 focus:ring-stone-100 transition-all resize-none"
                 />
                 <p className="text-[9px] text-stone-400 mt-1 font-sans">
@@ -3009,7 +3009,7 @@ export default function Dashboard({
                                 <h1>HANS TORIBIO</h1>
                                 <p>Scan to Book / Escanea para Consultas</p>
                                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&color=1c1917&data=${encodeURIComponent(window.location.origin)}" />
-                                <div class="footer">Times Square, NYC • @hansttoo</div>
+                                <div class="footer">Midtown Manhattan • @hansttoo</div>
                               </div>
                               <script>
                                 window.onload = function() {
@@ -3155,7 +3155,7 @@ export default function Dashboard({
                     type="text"
                     value={draftTitle}
                     onChange={(e) => setDraftTitle(e.target.value)}
-                    placeholder="Hans Tattoo | Fine Line & Microrealism in Times Square, NYC"
+                    placeholder="Hans | NYC Tattoo Artist | Fine Line & Microrealism"
                     className="w-full px-4 py-3 rounded-2xl border border-stone-200 text-xs font-semibold text-stone-800 bg-stone-50/50 focus:bg-white focus:border-stone-400 focus:outline-none focus:ring-4 focus:ring-stone-50 transition-all"
                   />
                 </div>
@@ -3178,7 +3178,7 @@ export default function Dashboard({
                     rows={3}
                     value={draftDesc}
                     onChange={(e) => setDraftDesc(e.target.value)}
-                    placeholder="Exclusive private tattoo studio in NYC. Custom fine line, microrealism, and manga tattoo panels by artist Hans Toribio..."
+                    placeholder="Independent NYC tattoo artist offering custom fine-line, microrealism, and manga tattoo consultations at Gara Art Studio."
                     className="w-full px-4 py-3 rounded-2xl border border-stone-200 text-xs font-semibold text-stone-800 bg-stone-50/50 focus:bg-white focus:border-stone-400 focus:outline-none focus:ring-4 focus:ring-stone-50 transition-all resize-none"
                   />
                 </div>
@@ -3206,7 +3206,7 @@ export default function Dashboard({
                     type="text"
                     value={draftOgImage}
                     onChange={(e) => setDraftOgImage(e.target.value)}
-                    placeholder="https://images.unsplash.com/photo-..."
+                    placeholder="/verified-portfolio-image.webp"
                     className="w-full px-4 py-3 rounded-2xl border border-stone-200 text-xs font-semibold text-stone-800 bg-stone-50/50 focus:bg-white focus:border-stone-400 focus:outline-none focus:ring-4 focus:ring-stone-50 transition-all"
                   />
                   <p className="text-[9px] text-stone-400 font-bold uppercase tracking-widest pl-1">
@@ -3249,7 +3249,7 @@ export default function Dashboard({
                       {draftTitle || 'Hans Tattoo | Fine Line, Microrealism & Anime New York'}
                     </h4>
                     <p className="text-[11px] text-stone-600 font-sans leading-relaxed tracking-normal">
-                      {draftDesc || 'Exclusive private tattoo studio in Times Square, New York specializing in fine line, microrealism, and custom anime panels.'}
+                      {draftDesc || 'Independent NYC tattoo artist offering fine-line, microrealism, and custom anime consultations at Gara Art Studio.'}
                     </p>
                   </div>
                 </div>
@@ -3270,7 +3270,7 @@ export default function Dashboard({
                           referrerPolicy="no-referrer"
                           onError={(e) => {
                             // fallback on image error
-                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1598104358204-87cefc7c5986?auto=format&fit=crop&q=80&w=600';
+                            (e.target as HTMLImageElement).src = '/og-hansttoo.svg';
                           }}
                         />
                       ) : (

@@ -1,120 +1,160 @@
-/**
- * Utilities for loading and trigger conversion tracking codes (Meta Pixel, Google Analytics)
- * to measure advertisement leads/conversions.
- */
+const config = {
+  ga4Id: String(import.meta.env.VITE_GA4_ID || '').trim(),
+  gtmId: String(import.meta.env.VITE_GTM_ID || '').trim(),
+  googleAdsId: String(import.meta.env.VITE_GOOGLE_ADS_ID || '').trim(),
+  googleAdsConversionLabel: String(import.meta.env.VITE_GOOGLE_ADS_CONVERSION_LABEL || '').trim(),
+  metaPixelId: String(import.meta.env.VITE_META_PIXEL_ID || '').trim(),
+};
 
-// Initialize tracking scripts based on configured IDs in LocalStorage
+const isGa4Id = (value: string) => /^G-[A-Z0-9]+$/.test(value);
+const isGtmId = (value: string) => /^GTM-[A-Z0-9]+$/.test(value);
+const isAdsId = (value: string) => /^AW-[0-9]+$/.test(value);
+const isMetaPixelId = (value: string) => /^[0-9]+$/.test(value);
+const CONSENT_STORAGE_KEY = 'hansttoo_measurement_consent';
+export type TrackingConsent = 'granted' | 'denied';
+let currentConsent: TrackingConsent = 'denied';
+let initialized = false;
+
+function ensureDataLayer() {
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = window.gtag || function gtag(...args: unknown[]) {
+    window.dataLayer?.push(args);
+  };
+}
+
+function loadScript(id: string, src: string) {
+  if (document.getElementById(id)) return;
+  const script = document.createElement('script');
+  script.id = id;
+  script.async = true;
+  script.src = src;
+  document.head.appendChild(script);
+}
+
+export function getStoredTrackingConsent(): TrackingConsent | null {
+  try {
+    const stored = localStorage.getItem(CONSENT_STORAGE_KEY);
+    return stored === 'granted' || stored === 'denied' ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+function setGoogleConsent(command: 'default' | 'update', consent: TrackingConsent) {
+  ensureDataLayer();
+  window.gtag?.('consent', command, {
+    analytics_storage: consent,
+    ad_storage: consent,
+    ad_user_data: consent,
+    ad_personalization: consent,
+    ...(command === 'default' && consent === 'denied' ? { wait_for_update: 500 } : {}),
+  });
+}
+
+function loadMetaPixel() {
+  if (!isMetaPixelId(config.metaPixelId)) return;
+  if (window.fbq) {
+    window.fbq('consent', 'grant');
+    return;
+  }
+
+  const fbq = function (...args: unknown[]) {
+    if (fbq.callMethod) fbq.callMethod(...args);
+    else fbq.queue.push(args);
+  } as MetaPixelFunction;
+  fbq.queue = [];
+  fbq.loaded = true;
+  fbq.version = '2.0';
+  window.fbq = fbq;
+  window._fbq = fbq;
+  loadScript('hansttoo-meta-pixel', 'https://connect.facebook.net/en_US/fbevents.js');
+  window.fbq('init', config.metaPixelId);
+  window.fbq('track', 'PageView');
+}
+
 export function initTracking() {
-  const metaPixelId = localStorage.getItem('hans_meta_pixel_id') || '';
-  const googleAnalyticsId = localStorage.getItem('hans_google_analytics_id') || '';
+  if (initialized) return;
+  initialized = true;
+  currentConsent = getStoredTrackingConsent() ?? 'denied';
+  setGoogleConsent('default', currentConsent);
+  window.gtag?.('set', 'ads_data_redaction', true);
 
-  // 1. Initialize Meta Pixel (fbevents.js)
-  if (metaPixelId && !window.fbq) {
-    try {
-      /* eslint-disable */
-      // @ts-ignore
-      !(function (f, b, e, v, n, t, s) {
-        if (f.fbq) return;
-        n = f.fbq = function () {
-          n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
-        };
-        if (!f._fbq) f._fbq = n;
-        n.push = n;
-        n.loaded = !0;
-        n.version = '2.0';
-        n.queue = [];
-        t = b.createElement(e);
-        t.async = !0;
-        t.src = v;
-        s = b.getElementsByTagName(e)[0];
-        s.parentNode.insertBefore(t, s);
-      })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
-      
-      // @ts-ignore
-      fbq('init', metaPixelId);
-      // @ts-ignore
-      fbq('track', 'PageView');
-      console.log(`[Tracking] Meta Pixel (${metaPixelId}) initialized.`);
-    } catch (err) {
-      console.error('[Tracking] Failed to initialize Meta Pixel:', err);
-    }
+  if (isGtmId(config.gtmId)) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+    loadScript('hansttoo-gtm', 'https://www.googletagmanager.com/gtm.js?id=' + encodeURIComponent(config.gtmId));
+  } else if (isGa4Id(config.ga4Id) || isAdsId(config.googleAdsId)) {
+    const loaderId = isGa4Id(config.ga4Id) ? config.ga4Id : config.googleAdsId;
+    ensureDataLayer();
+    loadScript('hansttoo-google-tag', 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(loaderId));
+    window.gtag?.('js', new Date());
+    if (isGa4Id(config.ga4Id)) window.gtag?.('config', config.ga4Id);
+    if (isAdsId(config.googleAdsId)) window.gtag?.('config', config.googleAdsId);
   }
 
-  // 2. Initialize Google Analytics (gtag.js)
-  if (googleAnalyticsId && !window.gtag) {
-    try {
-      const script = document.createElement('script');
-      script.async = true;
-      script.src = `https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`;
-      document.head.appendChild(script);
+  if (currentConsent === 'granted') loadMetaPixel();
+}
 
-      window.dataLayer = window.dataLayer || [];
-      window.gtag = function () {
-        window.dataLayer.push(arguments);
-      };
-      
-      window.gtag('js', new Date());
-      window.gtag('config', googleAnalyticsId);
-      console.log(`[Tracking] Google Analytics (${googleAnalyticsId}) initialized.`);
-    } catch (err) {
-      console.error('[Tracking] Failed to initialize Google Analytics:', err);
-    }
+export function updateTrackingConsent(consent: TrackingConsent) {
+  currentConsent = consent;
+  try {
+    localStorage.setItem(CONSENT_STORAGE_KEY, consent);
+  } catch {
+    // Consent still applies for this page even when browser storage is unavailable.
+  }
+  setGoogleConsent('update', consent);
+  if (consent === 'granted') loadMetaPixel();
+  else window.fbq?.('consent', 'revoke');
+}
+
+export function trackLeadConversion(details: { style: string; placement: string; size: number }) {
+  const eventData = {
+    event: 'generate_lead',
+    lead_type: 'tattoo_consultation',
+    tattoo_style: details.style,
+    approximate_size_cm: details.size,
+  };
+
+  ensureDataLayer();
+  window.dataLayer?.push(eventData);
+
+  if (!isGtmId(config.gtmId) && isGa4Id(config.ga4Id)) {
+    window.gtag?.('event', 'generate_lead', {
+      lead_type: eventData.lead_type,
+      tattoo_style: eventData.tattoo_style,
+      approximate_size_cm: eventData.approximate_size_cm,
+    });
+  }
+
+  if (!isGtmId(config.gtmId) && isAdsId(config.googleAdsId) && config.googleAdsConversionLabel) {
+    window.gtag?.('event', 'conversion', {
+      send_to: config.googleAdsId + '/' + config.googleAdsConversionLabel,
+      value: 1,
+      currency: 'USD',
+    });
+  }
+
+  if (currentConsent === 'granted' && isMetaPixelId(config.metaPixelId) && window.fbq) {
+    window.fbq('track', 'Lead', {
+      content_category: 'tattoo_consultation',
+      content_name: details.style,
+    });
   }
 }
 
-// Fire "Lead" conversion event when someone submits a consultation inquiry
-export function trackLeadConversion(details: {
-  style: string;
-  placement: string;
-  size: number;
-}) {
-  const metaPixelId = localStorage.getItem('hans_meta_pixel_id') || '';
-  const googleAnalyticsId = localStorage.getItem('hans_google_analytics_id') || '';
-
-  // Fire Meta Pixel Lead event
-  if (metaPixelId && window.fbq) {
-    try {
-      // @ts-ignore
-      fbq('track', 'Lead', {
-        content_name: 'Tattoo Inquiry Form',
-        content_category: 'Leads',
-        value: 1.0,
-        currency: 'EUR',
-        predicted_style: details.style,
-        placement_zone: details.placement,
-        size_cm: details.size
-      });
-      console.log('[Tracking] Meta Pixel "Lead" event tracked.');
-    } catch (err) {
-      console.error('[Tracking] Meta Pixel event failed:', err);
-    }
-  }
-
-  // Fire Google Analytics generate_lead event
-  if (googleAnalyticsId && window.gtag) {
-    try {
-      window.gtag('event', 'generate_lead', {
-        event_category: 'engagement',
-        event_label: 'Tattoo Inquiry Submission',
-        value: 1.0,
-        currency: 'EUR',
-        tattoo_style: details.style,
-        placement_zone: details.placement,
-        size_cm: details.size
-      });
-      console.log('[Tracking] Google Analytics "generate_lead" event tracked.');
-    } catch (err) {
-      console.error('[Tracking] Google Analytics event failed:', err);
-    }
-  }
+interface MetaPixelFunction {
+  (...args: unknown[]): void;
+  callMethod?: (...args: unknown[]) => void;
+  queue: unknown[][];
+  loaded: boolean;
+  version: string;
 }
 
-// Inject global window types for tracking scripts
 declare global {
   interface Window {
-    fbq?: any;
-    _fbq?: any;
-    gtag?: any;
-    dataLayer?: any;
+    dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
+    fbq?: MetaPixelFunction;
+    _fbq?: MetaPixelFunction;
   }
 }
