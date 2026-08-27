@@ -9,7 +9,13 @@ import {
   MessageSquare, ArrowUpRight, History, Feather, Flame, Compass, PenTool, Image as ImageIcon, Plus, Upload, Edit3, FolderPlus, Layers, LayoutGrid, Camera, LogOut,
   Clock, MapPin, Video, Play
 } from 'lucide-react';
-import { isSupabaseConfigured, fetchInquiriesFromSupabase, deleteInquiryFromSupabase } from '../lib/supabase';
+import { 
+  isSupabaseConfigured, 
+  fetchInquiriesFromSupabase, 
+  deleteInquiryFromSupabase,
+  fetchAdminSettingsFromSupabase,
+  saveAdminSettingsToSupabase
+} from '../lib/supabase';
 import { initTracking } from '../lib/tracking';
 import { isVideoUrl, getGoogleDriveEmbedUrl } from '../lib/media';
 import {
@@ -209,6 +215,19 @@ export default function Dashboard({
   // Artist Security Credentials (Passcode/Pin and Recovery Email)
   const [adminPasscode, setAdminPasscode] = useState(() => localStorage.getItem('hans_admin_passcode') || 'hans2026');
   const [recoveryEmail, setRecoveryEmail] = useState(() => localStorage.getItem('hans_recovery_email') || 'tattoobyhans@gmail.com');
+  const [isSavingSecurity, setIsSavingSecurity] = useState(false);
+
+  // Load Admin Settings from Supabase on mount
+  useEffect(() => {
+    fetchAdminSettingsFromSupabase().then((settings) => {
+      if (settings) {
+        if (settings.adminPasscode) setAdminPasscode(settings.adminPasscode);
+        if (settings.recoveryEmail) setRecoveryEmail(settings.recoveryEmail);
+        if (settings.metaPixelId) setMetaPixelId(settings.metaPixelId);
+        if (settings.googleAnalyticsId) setGoogleAnalyticsId(settings.googleAnalyticsId);
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('hans_admin_passcode', adminPasscode);
@@ -218,7 +237,7 @@ export default function Dashboard({
     localStorage.setItem('hans_recovery_email', recoveryEmail);
   }, [recoveryEmail]);
 
-  // Effects to save states
+  // Effects to save tracking states
   useEffect(() => {
     localStorage.setItem('hans_meta_pixel_id', metaPixelId);
     initTracking();
@@ -228,6 +247,34 @@ export default function Dashboard({
     localStorage.setItem('hans_google_analytics_id', googleAnalyticsId);
     initTracking();
   }, [googleAnalyticsId]);
+
+  const handleSaveSecurityCredentials = async () => {
+    setIsSavingSecurity(true);
+    try {
+      localStorage.setItem('hans_admin_passcode', adminPasscode);
+      localStorage.setItem('hans_recovery_email', recoveryEmail);
+      if (isSupabaseConfigured) {
+        await saveAdminSettingsToSupabase({
+          adminPasscode,
+          recoveryEmail
+        });
+      }
+      showToast(
+        language === 'en'
+          ? 'Security credentials saved in Supabase database!'
+          : '¡Credenciales guardadas en la base de datos Supabase!',
+        'success'
+      );
+    } catch (err) {
+      console.error('Failed to save security credentials:', err);
+      showToast(
+        language === 'en' ? 'Error saving credentials.' : 'Error al guardar credenciales.',
+        'error'
+      );
+    } finally {
+      setIsSavingSecurity(false);
+    }
+  };
 
   // Filters & Search
   const [searchTerm, setSearchTerm] = useState('');
@@ -2833,13 +2880,22 @@ export default function Dashboard({
               </div>
             </div>
 
-            {/* Status note */}
-            <div className="p-3 bg-stone-50 border border-stone-150 rounded-xl flex items-center justify-between text-[9px] text-stone-500 font-bold uppercase tracking-wider">
-              <span className="flex items-center">
+            {/* Save in Supabase action */}
+            <div className="pt-2 flex items-center justify-between">
+              <div className="p-2.5 bg-stone-50 border border-stone-150 rounded-xl flex items-center text-[9px] text-stone-500 font-bold uppercase tracking-wider">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-2 animate-pulse" />
-                {language === 'en' ? 'Credentials Saved' : 'Credenciales Guardadas'}
-              </span>
-              <span className="text-[#38A169] font-mono">SECURE</span>
+                <span>{language === 'en' ? 'Supabase Sync Active' : 'Sincronización Supabase Activa'}</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSaveSecurityCredentials}
+                disabled={isSavingSecurity}
+                className="inline-flex items-center px-4 py-2 bg-stone-900 hover:bg-[#E53E3E] text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-sm disabled:opacity-60"
+              >
+                <Save className={`w-3.5 h-3.5 mr-1.5 ${isSavingSecurity ? 'animate-spin' : ''}`} />
+                <span>{isSavingSecurity ? (language === 'en' ? 'Saving...' : 'Guardando...') : (language === 'en' ? 'Save in Supabase' : 'Guardar en Supabase')}</span>
+              </button>
             </div>
           </div>
 

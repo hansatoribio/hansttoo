@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { X, Lock, AlertCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { verifyAdminPasscodeFromSupabase } from '../lib/supabase';
 
 interface AdminLoginModalProps {
   language: 'en' | 'es';
@@ -17,11 +18,14 @@ export default function AdminLoginModal({
   const [error, setError] = useState<string | null>(null);
   const [passcode, setPasscode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Lock body scroll when admin login modal is active
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      setError(null);
+      setPasscode('');
     } else {
       document.body.style.overflow = '';
     }
@@ -32,31 +36,42 @@ export default function AdminLoginModal({
 
   if (!isOpen) return null;
 
-  const handlePasscodeLogin = (e: React.FormEvent) => {
+  const handlePasscodeLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     const cleanPass = passcode.trim();
-    const storedPasscode = localStorage.getItem('hans_admin_passcode') || 'hans2026';
-    
-    // Accepted master passcodes
-    const validCodes = [
-      storedPasscode.toLowerCase(),
-      'hans2026',
-      'hansadmin',
-      'hansttoo',
-      'hans',
-      'm7bi+ihm/f/vya#'
-    ];
-
-    if (validCodes.includes(cleanPass.toLowerCase()) || cleanPass === 'M7Bi+ihM/F/vya#') {
-      onSuccess();
-      onClose();
-    } else {
+    if (!cleanPass) {
       setError(
         language === 'en'
-          ? 'Incorrect passcode. Please try again.'
-          : 'Código incorrecto. Por favor, inténtalo de nuevo.'
+          ? 'Please enter your access code.'
+          : 'Por favor ingresa tu código de acceso.'
       );
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Validate dynamically against Supabase Database
+      const isValid = await verifyAdminPasscodeFromSupabase(cleanPass);
+      if (isValid) {
+        onSuccess();
+        onClose();
+      } else {
+        setError(
+          language === 'en'
+            ? 'Incorrect passcode. Please check your Supabase admin settings or try again.'
+            : 'Código incorrecto. Revisa tu clave en la base de datos Supabase o intenta de nuevo.'
+        );
+      }
+    } catch (err) {
+      console.error('Error validating passcode:', err);
+      setError(
+        language === 'en'
+          ? 'Error verifying passcode. Please try again.'
+          : 'Error al verificar el código. Por favor intenta de nuevo.'
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -136,9 +151,17 @@ export default function AdminLoginModal({
             </button>
             <button
               type="submit"
-              className="w-2/3 py-2.5 rounded-xl bg-stone-900 hover:bg-[#E53E3E] text-white text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer"
+              disabled={loading}
+              className="w-2/3 py-2.5 rounded-xl bg-stone-900 hover:bg-[#E53E3E] text-white text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center space-x-1.5 disabled:opacity-60"
             >
-              {language === 'en' ? 'Validate' : 'Validar'}
+              {loading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>{language === 'en' ? 'Verifying...' : 'Verificando...'}</span>
+                </>
+              ) : (
+                <span>{language === 'en' ? 'Validate' : 'Validar'}</span>
+              )}
             </button>
           </div>
         </form>

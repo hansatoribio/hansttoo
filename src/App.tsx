@@ -29,7 +29,11 @@ import {
   fetchInquiriesFromSupabase, 
   updateInquiryStatusInSupabase,
   updateInquiryNotesInSupabase,
-  deleteInquiryFromSupabase
+  deleteInquiryFromSupabase,
+  saveSubscriberToSupabase,
+  fetchSubscribersFromSupabase,
+  deleteSubscriberFromSupabase,
+  fetchAdminSettingsFromSupabase
 } from './lib/supabase';
 
 export default function App() {
@@ -322,20 +326,44 @@ export default function App() {
     return [];
   });
 
+  // Fetch subscribers and settings from Supabase on mount
+  useEffect(() => {
+    if (isSupabaseConfigured) {
+      fetchSubscribersFromSupabase().then((remoteSubs) => {
+        if (remoteSubs && remoteSubs.length > 0) {
+          const clean = remoteSubs.filter(s => !s.includes('example.com'));
+          setSubscribers((prev) => {
+            const merged = Array.from(new Set([...prev, ...clean]));
+            return merged;
+          });
+        }
+      }).catch(() => {});
+
+      fetchAdminSettingsFromSupabase().catch(() => {});
+    }
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('hans_subscribers', JSON.stringify(subscribers));
   }, [subscribers]);
 
-
   const handleSubscribe = (email: string) => {
+    const cleanEmail = email.trim().toLowerCase();
     setSubscribers((prev) => {
-      if (prev.includes(email)) return prev;
-      return [email, ...prev];
+      if (prev.includes(cleanEmail)) return prev;
+      return [cleanEmail, ...prev];
     });
+    if (isSupabaseConfigured) {
+      saveSubscriberToSupabase(cleanEmail).catch(() => {});
+    }
   };
 
   const handleRemoveSubscriber = (email: string) => {
-    setSubscribers((prev) => prev.filter((sub) => sub !== email));
+    const cleanEmail = email.trim().toLowerCase();
+    setSubscribers((prev) => prev.filter((sub) => sub !== cleanEmail));
+    if (isSupabaseConfigured) {
+      deleteSubscriberFromSupabase(cleanEmail).catch(() => {});
+    }
   };
 
   // Sync Language with LocalStorage

@@ -330,3 +330,236 @@ export async function updateInquiryNotesInSupabase(id: string, artistNotes: stri
     return false;
   }
 }
+
+export interface AdminSettings {
+  id?: string;
+  adminPasscode?: string;
+  recoveryEmail?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string;
+  metaPixelId?: string;
+  googleAnalyticsId?: string;
+  instagramUsername?: string;
+  instagramWidgetUrl?: string;
+  mapOpenHour?: number;
+  mapCloseHour?: number;
+  mapScheduleText?: string;
+  mapAddressLine1?: string;
+  mapAddressLine2?: string;
+  mapGoogleMapsUrl?: string;
+  customTranslations?: Record<string, Record<string, string>>;
+  updatedAt?: string;
+}
+
+/**
+ * Fetch Admin Settings (including the passcode) from Supabase
+ */
+export async function fetchAdminSettingsFromSupabase(): Promise<AdminSettings | null> {
+  if (!supabase) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('*')
+      .eq('id', 'main')
+      .maybeSingle();
+
+    if (error) {
+      console.warn('Admin settings table not yet created or inaccessible:', error);
+      return null;
+    }
+
+    if (!data) return null;
+
+    // Cache passcode and recovery email in localStorage for offline resilience
+    if (data.admin_passcode) {
+      localStorage.setItem('hans_admin_passcode', data.admin_passcode);
+    }
+    if (data.recovery_email) {
+      localStorage.setItem('hans_recovery_email', data.recovery_email);
+    }
+    if (data.custom_translations) {
+      localStorage.setItem('hans_custom_translations', JSON.stringify(data.custom_translations));
+    }
+
+    return {
+      id: data.id,
+      adminPasscode: data.admin_passcode,
+      recoveryEmail: data.recovery_email,
+      seoTitle: data.seo_title,
+      seoDescription: data.seo_description,
+      seoKeywords: data.seo_keywords,
+      metaPixelId: data.meta_pixel_id,
+      googleAnalyticsId: data.google_analytics_id,
+      instagramUsername: data.instagram_username,
+      instagramWidgetUrl: data.instagram_widget_url,
+      mapOpenHour: Number(data.map_open_hour || 11),
+      mapCloseHour: Number(data.map_close_hour || 20),
+      mapScheduleText: data.map_schedule_text,
+      mapAddressLine1: data.map_address_line1,
+      mapAddressLine2: data.map_address_line2,
+      mapGoogleMapsUrl: data.map_google_maps_url,
+      customTranslations: data.custom_translations || {},
+      updatedAt: data.updated_at
+    };
+  } catch (error) {
+    console.error('Error in fetchAdminSettingsFromSupabase:', error);
+    return null;
+  }
+}
+
+/**
+ * Save Admin Settings (including new passcode) to Supabase
+ */
+export async function saveAdminSettingsToSupabase(settings: Partial<AdminSettings>): Promise<boolean> {
+  if (!supabase) return false;
+
+  try {
+    const payload: any = {
+      id: 'main',
+      updated_at: new Date().toISOString()
+    };
+
+    if (settings.adminPasscode !== undefined) payload.admin_passcode = settings.adminPasscode;
+    if (settings.recoveryEmail !== undefined) payload.recovery_email = settings.recoveryEmail;
+    if (settings.seoTitle !== undefined) payload.seo_title = settings.seoTitle;
+    if (settings.seoDescription !== undefined) payload.seo_description = settings.seoDescription;
+    if (settings.seoKeywords !== undefined) payload.seo_keywords = settings.seoKeywords;
+    if (settings.metaPixelId !== undefined) payload.meta_pixel_id = settings.metaPixelId;
+    if (settings.googleAnalyticsId !== undefined) payload.google_analytics_id = settings.googleAnalyticsId;
+    if (settings.instagramUsername !== undefined) payload.instagram_username = settings.instagramUsername;
+    if (settings.instagramWidgetUrl !== undefined) payload.instagram_widget_url = settings.instagramWidgetUrl;
+    if (settings.mapOpenHour !== undefined) payload.map_open_hour = settings.mapOpenHour;
+    if (settings.mapCloseHour !== undefined) payload.map_close_hour = settings.mapCloseHour;
+    if (settings.mapScheduleText !== undefined) payload.map_schedule_text = settings.mapScheduleText;
+    if (settings.mapAddressLine1 !== undefined) payload.map_address_line1 = settings.mapAddressLine1;
+    if (settings.mapAddressLine2 !== undefined) payload.map_address_line2 = settings.mapAddressLine2;
+    if (settings.mapGoogleMapsUrl !== undefined) payload.map_google_maps_url = settings.mapGoogleMapsUrl;
+    if (settings.customTranslations !== undefined) payload.custom_translations = settings.customTranslations;
+
+    const { error } = await supabase
+      .from('admin_settings')
+      .upsert(payload, { onConflict: 'id' });
+
+    if (error) {
+      console.error('Failed to save admin settings to Supabase:', error);
+      return false;
+    }
+
+    if (settings.adminPasscode) {
+      localStorage.setItem('hans_admin_passcode', settings.adminPasscode);
+    }
+    return true;
+  } catch (error) {
+    console.error('Error in saveAdminSettingsToSupabase:', error);
+    return false;
+  }
+}
+
+/**
+ * Verify Admin Passcode dynamically against Supabase (No hardcoded passwords in code!)
+ */
+export async function verifyAdminPasscodeFromSupabase(inputPasscode: string): Promise<boolean> {
+  const cleanInput = inputPasscode.trim();
+  if (!cleanInput) return false;
+
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('admin_passcode')
+        .eq('id', 'main')
+        .maybeSingle();
+
+      if (!error && data && data.admin_passcode) {
+        // Cache the verified passcode in localStorage
+        localStorage.setItem('hans_admin_passcode', data.admin_passcode);
+        return data.admin_passcode === cleanInput || data.admin_passcode.toLowerCase() === cleanInput.toLowerCase();
+      }
+    } catch (err) {
+      console.warn('Supabase online check failed, falling back to local verification:', err);
+    }
+  }
+
+  // Fallback to locally stored passcode (initialized when admin logged in)
+  const stored = localStorage.getItem('hans_admin_passcode');
+  if (stored) {
+    return stored === cleanInput || stored.toLowerCase() === cleanInput.toLowerCase();
+  }
+
+  return false;
+}
+
+/**
+ * Save subscriber to Supabase
+ */
+export async function saveSubscriberToSupabase(email: string): Promise<boolean> {
+  if (!supabase) return false;
+
+  try {
+    const { error } = await supabase
+      .from('subscribers')
+      .upsert({
+        id: `sub-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        email: email.trim().toLowerCase(),
+        created_at: new Date().toISOString()
+      }, { onConflict: 'email' });
+
+    if (error) {
+      console.error('Failed to save subscriber to Supabase:', error);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error('Error in saveSubscriberToSupabase:', error);
+    return false;
+  }
+}
+
+/**
+ * Fetch all subscribers from Supabase
+ */
+export async function fetchSubscribersFromSupabase(): Promise<string[]> {
+  if (!supabase) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('subscribers')
+      .select('email')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Failed to fetch subscribers from Supabase:', error);
+      return [];
+    }
+
+    return (data || []).map((row: any) => row.email).filter(Boolean);
+  } catch (error) {
+    console.error('Error in fetchSubscribersFromSupabase:', error);
+    return [];
+  }
+}
+
+/**
+ * Delete subscriber from Supabase
+ */
+export async function deleteSubscriberFromSupabase(email: string): Promise<boolean> {
+  if (!supabase) return false;
+
+  try {
+    const { error } = await supabase
+      .from('subscribers')
+      .delete()
+      .eq('email', email.trim().toLowerCase());
+
+    if (error) {
+      console.error('Failed to delete subscriber from Supabase:', error);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error('Error in deleteSubscriberFromSupabase:', error);
+    return false;
+  }
+}
