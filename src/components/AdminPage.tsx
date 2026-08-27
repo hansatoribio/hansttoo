@@ -2,6 +2,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   ArrowLeft,
+  BarChart3,
   CalendarDays,
   CheckCircle2,
   Clock3,
@@ -59,6 +60,15 @@ function formatDate(value: string) {
     timeStyle: 'short',
     timeZone: 'America/New_York',
   }).format(new Date(value));
+}
+
+function attributionLabel(inquiry: Inquiry) {
+  const attribution = inquiry.attribution;
+  if (!attribution) return 'Origen no registrado';
+  if (attribution.gclid || attribution.gbraid || attribution.wbraid) return 'Google Ads';
+  if (attribution.fbclid) return 'Meta Ads';
+  if (attribution.source === 'direct') return 'Visita directa';
+  return attribution.source || 'Origen no registrado';
 }
 
 function contactLink(inquiry: Inquiry): { href: string; label: string; icon: typeof Mail } | null {
@@ -289,6 +299,26 @@ function LeadDetail({
             </a>
           ) : null}
 
+          {inquiry.attribution ? (
+            <div className="mt-7 rounded-2xl border border-stone-200 bg-stone-50 p-4">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-stone-500" aria-hidden="true" />
+                <p className="text-xs font-black uppercase tracking-wider text-stone-500">Origen de la consulta</p>
+              </div>
+              <div className="mt-3 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+                <p><span className="block text-xs text-stone-500">Canal</span><span className="font-bold">{attributionLabel(inquiry)}</span></p>
+                <p><span className="block text-xs text-stone-500">Medio</span><span className="font-bold">{inquiry.attribution.medium || 'No indicado'}</span></p>
+                <p><span className="block text-xs text-stone-500">Campaña</span><span className="break-words font-bold">{inquiry.attribution.campaign || 'No indicada'}</span></p>
+                <p><span className="block text-xs text-stone-500">Anuncio / contenido</span><span className="break-words font-bold">{inquiry.attribution.content || 'No indicado'}</span></p>
+                <p><span className="block text-xs text-stone-500">Palabra clave</span><span className="break-words font-bold">{inquiry.attribution.term || 'No indicada'}</span></p>
+                <p><span className="block text-xs text-stone-500">Página de entrada</span><span className="break-words font-bold">{inquiry.attribution.landingPath}</span></p>
+                {(inquiry.attribution.gclid || inquiry.attribution.gbraid || inquiry.attribution.wbraid || inquiry.attribution.fbclid) ? (
+                  <p className="sm:col-span-2"><span className="block text-xs text-stone-500">Identificador publicitario</span><span className="font-bold">Capturado para atribución; valor oculto en el panel.</span></p>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
           <div className="mt-7">
             <p className="text-sm font-black">Imágenes de referencia</p>
             {mediaLoading ? <p className="mt-3 inline-flex items-center text-sm text-stone-500"><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />Preparando acceso privado…</p> : null}
@@ -354,7 +384,7 @@ function AdminDashboard({ identity, onSignedOut }: { identity: AdminIdentity; on
     return inquiries.filter((inquiry) => {
       if (filter !== 'all' && inquiry.status !== filter) return false;
       if (!query) return true;
-      return [inquiry.fullName, inquiry.email, inquiry.phone, inquiry.instagram, inquiry.placement, inquiry.description]
+      return [inquiry.fullName, inquiry.email, inquiry.phone, inquiry.instagram, inquiry.placement, inquiry.description, inquiry.attribution?.source, inquiry.attribution?.campaign, inquiry.attribution?.term]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(query));
     });
@@ -426,7 +456,7 @@ function AdminDashboard({ identity, onSignedOut }: { identity: AdminIdentity; on
               return (
                 <button key={inquiry.id} onClick={() => setSelected(inquiry)} className="grid w-full gap-4 rounded-3xl border border-stone-200 bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-stone-400 hover:shadow-lg sm:grid-cols-[1.2fr_0.9fr_0.8fr_auto] sm:items-center">
                   <span><span className="block text-lg font-black">{inquiry.fullName}</span><span className="mt-1 block text-xs text-stone-500">{formatDate(inquiry.createdAt)}</span></span>
-                  <span className="text-sm"><span className="block font-bold">{styleLabels[inquiry.style]}</span><span className="mt-1 block text-stone-500">{inquiry.placement}</span></span>
+                  <span className="text-sm"><span className="block font-bold">{styleLabels[inquiry.style]}</span><span className="mt-1 block text-stone-500">{inquiry.placement}</span><span className="mt-1 block text-xs font-bold text-[#C9362B]">{attributionLabel(inquiry)}</span></span>
                   <span className="text-sm text-stone-600">{inquiry.email || inquiry.instagram || inquiry.phone || 'Sin contacto'}</span>
                   <span className={`justify-self-start rounded-full px-3 py-1 text-xs font-black sm:justify-self-end ${meta.color}`}>{meta.label}</span>
                 </button>

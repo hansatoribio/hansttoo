@@ -18,6 +18,16 @@ create table if not exists public.inquiries (
   description text not null,
   reference_images text[] not null default '{}',
   reference_image text,
+  utm_source text,
+  utm_medium text,
+  utm_campaign text,
+  utm_content text,
+  utm_term text,
+  gclid text,
+  gbraid text,
+  wbraid text,
+  fbclid text,
+  landing_path text not null default '/',
   status text not null default 'pending',
   artist_notes text,
   medical_notes text,
@@ -38,6 +48,30 @@ create table if not exists public.inquiries (
 
 alter table public.inquiries enable row level security;
 alter table public.inquiries alter column email drop not null;
+alter table public.inquiries add column if not exists utm_source text;
+alter table public.inquiries add column if not exists utm_medium text;
+alter table public.inquiries add column if not exists utm_campaign text;
+alter table public.inquiries add column if not exists utm_content text;
+alter table public.inquiries add column if not exists utm_term text;
+alter table public.inquiries add column if not exists gclid text;
+alter table public.inquiries add column if not exists gbraid text;
+alter table public.inquiries add column if not exists wbraid text;
+alter table public.inquiries add column if not exists fbclid text;
+alter table public.inquiries add column if not exists landing_path text not null default '/';
+
+alter table public.inquiries drop constraint if exists inquiries_attribution_length;
+alter table public.inquiries add constraint inquiries_attribution_length check (
+  char_length(coalesce(utm_source, '')) <= 200
+  and char_length(coalesce(utm_medium, '')) <= 200
+  and char_length(coalesce(utm_campaign, '')) <= 200
+  and char_length(coalesce(utm_content, '')) <= 200
+  and char_length(coalesce(utm_term, '')) <= 200
+  and char_length(coalesce(gclid, '')) <= 500
+  and char_length(coalesce(gbraid, '')) <= 500
+  and char_length(coalesce(wbraid, '')) <= 500
+  and char_length(coalesce(fbclid, '')) <= 500
+  and char_length(landing_path) between 1 and 300
+);
 
 -- A user must first exist in Supabase Auth and then be added here by the
 -- project owner. The browser cannot add or promote administrators.

@@ -133,6 +133,16 @@ export async function saveInquiryToSupabase(inquiry: Inquiry): Promise<{ success
       description: inquiry.description,
       reference_images: uploadedReferenceImages,
       reference_image: uploadedReferenceImages[0] || null,
+      utm_source: inquiry.attribution?.source || null,
+      utm_medium: inquiry.attribution?.medium || null,
+      utm_campaign: inquiry.attribution?.campaign || null,
+      utm_content: inquiry.attribution?.content || null,
+      utm_term: inquiry.attribution?.term || null,
+      gclid: inquiry.attribution?.gclid || null,
+      gbraid: inquiry.attribution?.gbraid || null,
+      wbraid: inquiry.attribution?.wbraid || null,
+      fbclid: inquiry.attribution?.fbclid || null,
+      landing_path: inquiry.attribution?.landingPath || '/',
       status: 'pending',
       created_at: inquiry.createdAt || new Date().toISOString(),
     });
@@ -169,6 +179,18 @@ function mapInquiry(row: Record<string, unknown>): Inquiry {
     artistNotes: typeof row.artist_notes === 'string' ? row.artist_notes : '',
     medicalNotes: typeof row.medical_notes === 'string' ? row.medical_notes : undefined,
     createdAt: String(row.created_at || ''),
+    attribution: {
+      source: typeof row.utm_source === 'string' ? row.utm_source : undefined,
+      medium: typeof row.utm_medium === 'string' ? row.utm_medium : undefined,
+      campaign: typeof row.utm_campaign === 'string' ? row.utm_campaign : undefined,
+      content: typeof row.utm_content === 'string' ? row.utm_content : undefined,
+      term: typeof row.utm_term === 'string' ? row.utm_term : undefined,
+      gclid: typeof row.gclid === 'string' ? row.gclid : undefined,
+      gbraid: typeof row.gbraid === 'string' ? row.gbraid : undefined,
+      wbraid: typeof row.wbraid === 'string' ? row.wbraid : undefined,
+      fbclid: typeof row.fbclid === 'string' ? row.fbclid : undefined,
+      landingPath: typeof row.landing_path === 'string' ? row.landing_path : '/',
+    },
   };
 }
 

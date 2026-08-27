@@ -11,6 +11,7 @@ import Navbar from './components/Navbar';
 import Portfolio from './components/Portfolio';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import ThankYou from './components/ThankYou';
+import { readLeadAttribution } from './lib/attribution';
 import { getStoredTrackingConsent, initTracking, trackLeadConversion, updateTrackingConsent } from './lib/tracking';
 import type { TrackingConsent } from './lib/tracking';
 import { localizedPath, updatePageMetadata } from './lib/seo';
@@ -64,6 +65,7 @@ export default function App() {
   const [path, setPath] = useState(window.location.pathname);
   const [preselectedStyle, setPreselectedStyle] = useState<TattooStyle | null>(null);
   const [consentOpen, setConsentOpen] = useState(() => getStoredTrackingConsent() === null);
+  const [leadAttribution] = useState(() => readLeadAttribution());
   const { language, page: currentPage } = resolveRoute(path);
 
   useEffect(() => {
@@ -110,7 +112,8 @@ export default function App() {
 
   const submitInquiry = async (inquiry: Inquiry) => {
     const { saveInquiryToSupabase } = await import('./lib/supabase');
-    const result = await saveInquiryToSupabase(inquiry);
+    const attributedInquiry = { ...inquiry, attribution: leadAttribution };
+    const result = await saveInquiryToSupabase(attributedInquiry);
     if (!result.success) {
       throw result.error instanceof Error ? result.error : new Error('The consultation service is unavailable.');
     }

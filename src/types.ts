@@ -22,6 +22,19 @@ export interface PortfolioItem {
 
 export type InquiryStatus = 'pending' | 'contacted' | 'replied' | 'booked' | 'completed' | 'declined';
 
+export interface LeadAttribution {
+  source?: string;
+  medium?: string;
+  campaign?: string;
+  content?: string;
+  term?: string;
+  gclid?: string;
+  gbraid?: string;
+  wbraid?: string;
+  fbclid?: string;
+  landingPath: string;
+}
+
 export interface Inquiry {
   id: string;
   fullName: string;
@@ -42,6 +55,7 @@ export interface Inquiry {
   artistNotes?: string;
   medicalNotes?: string;
   statusHistory?: { status: InquiryStatus; timestamp: string; note?: string }[];
+  attribution?: LeadAttribution;
 }
 
 export interface Review {

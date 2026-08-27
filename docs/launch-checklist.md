@@ -11,6 +11,8 @@ Nothing in this checklist should be activated until Hans reviews the site, the p
 
 ## Google measurement — choose one setup
 
+The website can be used for a Google Search campaign without a Google Business Profile or location asset. See `paid-ads-brief.md`. Google Ads billing and advertiser verification may still require Hans's real legal/billing address privately in the Google account.
+
 ### Google Tag Manager (recommended when an agency manages tags)
 
 - `VITE_GTM_ID`: container ID in the form `GTM-XXXXXXX`.
@@ -32,10 +34,10 @@ Google tags use advanced Consent Mode v2: all optional storage and advertising c
 ## Meta measurement
 
 - `VITE_META_PIXEL_ID`: the numeric Meta Pixel ID.
-- Verify the `PageView` and `Lead` events with Meta Pixel Helper or Events Manager Test Events before using the event for optimization.
+- Verify the website `PageView` and `Lead` events with Meta Pixel Helper or Events Manager Test Events only if the website Pixel will be used for consented analytics or a separately approved future retargeting campaign.
 - Meta Pixel is not loaded until the visitor allows measurement, and the choice can be revoked from the footer.
 
-The Meta `Lead` event fires only after Supabase confirms the inquiry insert. It includes the selected tattoo style but no direct contact information, free-text description, or uploaded image.
+The approved Meta acquisition campaign sends people directly to Instagram Direct for @hansttoo, not to this website. Its primary result is a messaging conversation and it must not be optimized or reported from the website Pixel. The website `Lead` event remains limited to website form submissions: it fires only after Supabase confirms the inquiry insert and includes the selected tattoo style but no direct contact information, free-text description, or uploaded image.
 
 Meta Conversions API is not enabled. If Hans later approves server-side measurement, provide the Pixel/Dataset ID and create the access token only through Meta’s official Events Manager. Never place a Conversions API access token in a `VITE_` variable or browser code; a server-side endpoint and shared `event_id` deduplication must be reviewed separately.
 
@@ -52,5 +54,7 @@ Meta Conversions API is not enabled. If Hans later approves server-side measurem
 - Test form validation, optional uploads, backend error handling, successful submission, `/thank-you`, and one conversion event per confirmed lead.
 - Verify desktop and mobile layouts, keyboard navigation, visible focus, headings, image alternatives, console errors, `robots.txt`, and `sitemap.xml`.
 - Confirm the production build contains only approved IDs and the correct canonical domain.
+- Open a test Google URL containing UTM/click parameters, submit to the local non-persistent test backend, and confirm the allow-listed attribution reaches the lead while arbitrary query parameters do not.
+- Separately preview the Meta ad and confirm its button opens Instagram Direct for @hansttoo; do not route that ad through the website.
 - Validate canonical and reciprocal `hreflang` links, submit `sitemap.xml` in Google Search Console after deployment, and validate the Person/WebSite graph with Google’s Rich Results Test or Schema.org validator.
 - Do not publish campaigns or production changes until Hans approves the final result.

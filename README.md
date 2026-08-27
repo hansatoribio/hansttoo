@@ -49,6 +49,8 @@ The frontend uses only the public publishable/anon key. It never needs a `servic
 
 See `docs/launch-checklist.md` for the exact Google and Meta identifiers required and the pre-launch test procedure.
 
+See `docs/paid-ads-brief.md` for the approved advertiser identity, no-location-asset Google Search setup, initial keyword/negative-keyword themes, Meta structure, and lead-quality measurement plan. The site attaches only allow-listed campaign attribution to submitted consultations so the secure admin panel can show which source produced each lead.
+
 ## Deployment
 
 `npm run build` creates the static client in `dist/`, including route-specific HTML for English, Spanish, privacy, thank-you, and admin routes. The production project is deployed from the `main` branch to `https://hansttoo.vercel.app`; builds and verification scripts do not deploy by themselves.

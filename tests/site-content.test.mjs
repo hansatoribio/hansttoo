@@ -61,6 +61,34 @@ test('tracking uses environment configuration and USD', async () => {
   assert.doesNotMatch(tracking, /currency: 'EUR'/);
 });
 
+test('lead attribution is allow-listed, stored with the inquiry, and excludes arbitrary query data', async () => {
+  const [attribution, app, supabaseClient, schema, privacy] = await Promise.all([
+    readFile('src/lib/attribution.ts', 'utf8'),
+    readFile('src/App.tsx', 'utf8'),
+    readFile('src/lib/supabase.ts', 'utf8'),
+    readFile('supabase_schema.sql', 'utf8'),
+    readFile('src/components/PrivacyPolicy.tsx', 'utf8'),
+  ]);
+  for (const field of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'gclid', 'gbraid', 'wbraid', 'fbclid']) {
+    assert.match(attribution, new RegExp(field));
+    assert.match(supabaseClient, new RegExp(field));
+    assert.match(schema, new RegExp(field));
+  }
+  assert.match(app, /readLeadAttribution/);
+  assert.match(attribution, /url\.pathname/);
+  assert.doesNotMatch(attribution, /Object\.fromEntries\(url\.searchParams/);
+  assert.match(privacy, /allow-listed campaign parameters/);
+  assert.match(privacy, /parámetros de campaña permitidos/);
+});
+
+test('paid media brief separates Google website leads from Meta Instagram Direct', async () => {
+  const brief = await readFile('docs/paid-ads-brief.md', 'utf8');
+  assert.match(brief, /Google Business Profile or public location asset/);
+  assert.match(brief, /destination is \*\*Instagram Direct for @hansttoo\*\*/);
+  assert.match(brief, /Meta ads do \*\*not\*\* send people to the website/);
+  assert.match(brief, /Do not optimize or report this campaign using website page views, website Pixel/);
+});
+
 test('build prepares route-specific HTML for crawlable language metadata', async () => {
   const generator = await readFile('scripts/generate-static-routes.mjs', 'utf8');
   assert.match(generator, /path: 'es'/);

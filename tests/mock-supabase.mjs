@@ -12,8 +12,32 @@ const server = createServer((request, response) => {
   }
 
   if (request.method === 'POST' && request.url?.startsWith('/rest/v1/inquiries')) {
-    request.resume();
+    let body = '';
+    request.setEncoding('utf8');
+    request.on('data', (chunk) => {
+      body += chunk;
+    });
     request.on('end', () => {
+      try {
+        const parsed = JSON.parse(body);
+        const inquiry = Array.isArray(parsed) ? parsed[0] : parsed;
+        const attribution = {
+          utm_source: inquiry?.utm_source,
+          utm_medium: inquiry?.utm_medium,
+          utm_campaign: inquiry?.utm_campaign,
+          utm_content: inquiry?.utm_content,
+          utm_term: inquiry?.utm_term,
+          gclid: inquiry?.gclid,
+          gbraid: inquiry?.gbraid,
+          wbraid: inquiry?.wbraid,
+          fbclid: inquiry?.fbclid,
+          landing_path: inquiry?.landing_path,
+          contains_unexpected_parameter: Object.hasOwn(inquiry || {}, 'not_allowed'),
+        };
+        console.log('Captured local attribution:', JSON.stringify(attribution));
+      } catch {
+        console.log('Captured local attribution: invalid request body');
+      }
       setTimeout(() => {
         response.writeHead(201, { 'Content-Type': 'application/json' });
         response.end('{}');
