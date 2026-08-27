@@ -14,6 +14,37 @@
     <link rel="alternate" hreflang="x-default" href="https://hansttoo.vercel.app/" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 
+    <!-- Prevent the crawlable HTML fallback from flashing before the React UI mounts. -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #fcfbfa;
+      }
+
+      #static-seo-content {
+        display: none;
+      }
+    </style>
+    <noscript>
+      <style>
+        #static-seo-content {
+          display: block;
+          max-width: 72rem;
+          margin: 0 auto;
+          padding: 2rem 1rem;
+          color: #1c1917;
+          font-family: Arial, "Helvetica Neue", sans-serif;
+          line-height: 1.6;
+        }
+
+        #static-seo-content img {
+          max-width: 100%;
+          height: auto;
+        }
+      </style>
+    </noscript>
+
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Hans | NYC Tattoo Artist" />
     <meta property="og:description" content="Custom anime, manga, microrealism, and fine-line tattoo consultations with Hans at Gara Art Studio in Midtown Manhattan." />
