@@ -9,3 +9,4 @@ coverage/
 !.env.production
 scripts/*
 !scripts/generate-static-routes.mjs
+!scripts/optimize_portfolio_images.py

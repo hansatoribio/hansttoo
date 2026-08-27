@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://hansttoo.vercel.app/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://hansttoo.vercel.app/" />
@@ -8,6 +8,18 @@
     <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://hansttoo.vercel.app/portfolio/anime-my-hero-tattoo-nyc.webp</image:loc>
+      <image:title>Custom anime tattoo by Hans in New York City</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://hansttoo.vercel.app/portfolio/microrealism-empire-state-tattoo-nyc.webp</image:loc>
+      <image:title>Empire State microrealism tattoo by Hans</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://hansttoo.vercel.app/portfolio/fine-line-hummingbird-tattoo-nyc.webp</image:loc>
+      <image:title>Fine-line hummingbird tattoo by Hans</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://hansttoo.vercel.app/es</loc>
@@ -17,6 +29,18 @@
     <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://hansttoo.vercel.app/portfolio/anime-my-hero-tattoo-nyc.webp</image:loc>
+      <image:title>Tatuaje de anime personalizado de Hans en Nueva York</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://hansttoo.vercel.app/portfolio/microrealism-empire-state-tattoo-nyc.webp</image:loc>
+      <image:title>Tatuaje de microrrealismo del Empire State realizado por Hans</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://hansttoo.vercel.app/portfolio/fine-line-hummingbird-tattoo-nyc.webp</image:loc>
+      <image:title>Tatuaje de línea fina de colibrí realizado por Hans</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://hansttoo.vercel.app/privacy</loc>

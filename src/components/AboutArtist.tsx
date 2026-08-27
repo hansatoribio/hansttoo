@@ -40,13 +40,21 @@ export default function AboutArtist({ language, onNavigate }: AboutArtistProps) 
   return (
     <section id="about" className="bg-[#FCFBFA] py-16 sm:py-24">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.75fr_1.25fr] lg:items-center">
-        <div className="aspect-[4/5] rounded-[2rem] border border-stone-300 bg-white p-7 shadow-sm">
-          <div className="flex h-full flex-col justify-between rounded-[1.5rem] bg-stone-950 p-7 text-white">
-            <span className="font-mono text-xs tracking-[0.2em] text-stone-400">@HANSTTOO</span>
-            <span className="text-[7rem] font-black leading-none tracking-[-0.1em]">H.</span>
-            <span className="text-sm font-bold text-stone-300">{t.city}</span>
-          </div>
-        </div>
+        <figure className="relative aspect-[4/5] overflow-hidden rounded-[2rem] border border-stone-300 bg-stone-950 shadow-sm">
+          <img
+            src="/portfolio/hans-tattoo-artist-nyc.webp"
+            width="901"
+            height="1600"
+            loading="lazy"
+            decoding="async"
+            alt={language === 'en' ? 'Hans working on a tattoo in New York City' : 'Hans trabajando en un tatuaje en Nueva York'}
+            className="h-full w-full object-cover object-center"
+          />
+          <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-6 pb-6 pt-16 text-white">
+            <span className="block font-mono text-xs tracking-[0.2em] text-stone-300">@HANSTTOO</span>
+            <span className="mt-2 block text-sm font-bold">{t.city}</span>
+          </figcaption>
+        </figure>
         <div>
           <p className="text-xs font-black tracking-[0.24em] text-[#C9362B]">{t.eyebrow}</p>
           <h2 className="mt-3 text-4xl font-black tracking-[-0.055em] sm:text-6xl">{t.title}</h2>

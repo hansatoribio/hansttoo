@@ -57,4 +57,12 @@ See `docs/paid-ads-brief.md` for the approved advertiser identity, no-location-a
 
 ## Portfolio assets
 
-The repository’s current local tattoo/artist files are byte-corrupted and cannot be rendered reliably. The public site therefore does not display them or any stock substitutes. Add verified original files before enabling an on-site image gallery. Until then, the Selected Work section links to Hans’s official Instagram.
+The Selected Work gallery uses only verified originals supplied by Hans. Optimized WebP copies live in `public/portfolio`; the high-resolution source photos remain unchanged outside the deployed asset folder.
+
+To regenerate the web copies after replacing or adding approved originals, install Pillow and run:
+
+```bash
+python scripts/optimize_portfolio_images.py --source-root C:/path/to/hansttoo
+```
+
+The current selection reduces roughly 72 MB of source photography to about 0.6 MB while stripping camera metadata and preserving enough resolution for modern high-density screens.

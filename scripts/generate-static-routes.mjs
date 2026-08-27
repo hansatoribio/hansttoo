@@ -26,10 +26,13 @@ const staticFallbacks = {
           <p>Hans se especializa en tatuajes personalizados de anime y manga, microrrealismo y línea fina en la ciudad de Nueva York.</p>
           <h3>Tatuajes de Anime y Manga</h3>
           <p>Composiciones personalizadas según el personaje, panel, zona y escala solicitados por cada cliente.</p>
+          <img src="/portfolio/anime-my-hero-tattoo-nyc.webp" alt="Tatuaje detallado de personaje de anime en negro y gris realizado por Hans" width="1067" height="1600" loading="lazy" />
           <h3>Tatuajes de Microrrealismo</h3>
           <p>Imágenes a pequeña escala planificadas según el detalle legible, el contraste y la zona elegida.</p>
+          <img src="/portfolio/microrealism-empire-state-tattoo-nyc.webp" alt="Tatuaje de microrrealismo del Empire State realizado por Hans" width="1067" height="1600" loading="lazy" />
           <h3>Tatuajes de Línea Fina</h3>
           <p>Conceptos personalizados centrados en líneas y planificados cuidadosamente para cada zona.</p>
+          <img src="/portfolio/fine-line-hummingbird-tattoo-nyc.webp" alt="Tatuaje de línea fina de colibrí y flor realizado por Hans" width="1067" height="1600" loading="lazy" />
           <a href="https://www.instagram.com/hansttoo/" rel="noopener">Ver trabajos auténticos publicados por @hansttoo</a>
         </section>
         <section>

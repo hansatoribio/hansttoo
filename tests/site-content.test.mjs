@@ -127,3 +127,18 @@ test('mobile hero uses content height instead of forcing a full viewport', async
   assert.match(hero, /sm:min-h-\[calc\(100svh-4rem\)\]/);
   assert.doesNotMatch(hero, /grid min-h-\[calc\(100svh-4rem\)\]/);
 });
+
+test('portfolio uses verified local WebP images with accessible loading hints', async () => {
+  const [portfolio, about] = await Promise.all([
+    readFile('src/components/Portfolio.tsx', 'utf8'),
+    readFile('src/components/AboutArtist.tsx', 'utf8'),
+  ]);
+  assert.match(portfolio, /\/portfolio\/anime-my-hero-tattoo-nyc\.webp/);
+  assert.match(portfolio, /\/portfolio\/microrealism-empire-state-tattoo-nyc\.webp/);
+  assert.match(portfolio, /\/portfolio\/fine-line-hummingbird-tattoo-nyc\.webp/);
+  assert.match(portfolio, /loading="lazy"/);
+  assert.match(portfolio, /decoding="async"/);
+  assert.match(portfolio, /Every image below is an authentic tattoo/);
+  assert.match(about, /\/portfolio\/hans-tattoo-artist-nyc\.webp/);
+  assert.doesNotMatch(portfolio, /cannot currently be rendered|ImageOff/);
+});
