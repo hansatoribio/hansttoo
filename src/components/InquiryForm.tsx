@@ -1,5 +1,5 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, CheckCircle2, ImagePlus, Loader2, LockKeyhole, Trash2 } from 'lucide-react';
+import { AlertCircle, Check, CheckCircle2, ChevronDown, ImagePlus, Loader2, LockKeyhole, Search, Trash2 } from 'lucide-react';
 import { Inquiry, Language, TattooStyle } from '../types';
 
 interface InquiryFormProps {
@@ -8,8 +8,57 @@ interface InquiryFormProps {
   onInquirySubmitted: (inquiry: Inquiry) => Promise<void>;
 }
 
-type ContactMethod = 'email' | 'instagram' | 'phone';
+type ContactMethod = 'email' | 'instagram' | 'whatsapp';
 type FormErrors = Record<string, string>;
+
+interface CountryCode {
+  code: string;
+  country: string;
+  countryEs: string;
+  dial: string;
+  flag: string;
+}
+
+const countryCodes: CountryCode[] = [
+  { code: 'US', country: 'United States', countryEs: 'Estados Unidos', dial: '+1', flag: '🇺🇸' },
+  { code: 'DO', country: 'Dominican Republic', countryEs: 'República Dominicana', dial: '+1', flag: '🇩🇴' },
+  { code: 'PR', country: 'Puerto Rico', countryEs: 'Puerto Rico', dial: '+1', flag: '🇵🇷' },
+  { code: 'CA', country: 'Canada', countryEs: 'Canadá', dial: '+1', flag: '🇨🇦' },
+  { code: 'MX', country: 'Mexico', countryEs: 'México', dial: '+52', flag: '🇲🇽' },
+  { code: 'ES', country: 'Spain', countryEs: 'España', dial: '+34', flag: '🇪🇸' },
+  { code: 'CO', country: 'Colombia', countryEs: 'Colombia', dial: '+57', flag: '🇨🇴' },
+  { code: 'VE', country: 'Venezuela', countryEs: 'Venezuela', dial: '+58', flag: '🇻🇪' },
+  { code: 'EC', country: 'Ecuador', countryEs: 'Ecuador', dial: '+593', flag: '🇪🇨' },
+  { code: 'PE', country: 'Peru', countryEs: 'Perú', dial: '+51', flag: '🇵🇪' },
+  { code: 'AR', country: 'Argentina', countryEs: 'Argentina', dial: '+54', flag: '🇦🇷' },
+  { code: 'CL', country: 'Chile', countryEs: 'Chile', dial: '+56', flag: '🇨🇱' },
+  { code: 'BR', country: 'Brazil', countryEs: 'Brasil', dial: '+55', flag: '🇧🇷' },
+  { code: 'UY', country: 'Uruguay', countryEs: 'Uruguay', dial: '+598', flag: '🇺🇾' },
+  { code: 'PY', country: 'Paraguay', countryEs: 'Paraguay', dial: '+595', flag: '🇵🇾' },
+  { code: 'BO', country: 'Bolivia', countryEs: 'Bolivia', dial: '+591', flag: '🇧🇴' },
+  { code: 'PA', country: 'Panama', countryEs: 'Panamá', dial: '+507', flag: '🇵🇦' },
+  { code: 'CR', country: 'Costa Rica', countryEs: 'Costa Rica', dial: '+506', flag: '🇨🇷' },
+  { code: 'GT', country: 'Guatemala', countryEs: 'Guatemala', dial: '+502', flag: '🇬🇹' },
+  { code: 'SV', country: 'El Salvador', countryEs: 'El Salvador', dial: '+503', flag: '🇸🇻' },
+  { code: 'HN', country: 'Honduras', countryEs: 'Honduras', dial: '+504', flag: '🇭🇳' },
+  { code: 'NI', country: 'Nicaragua', countryEs: 'Nicaragua', dial: '+505', flag: '🇳🇮' },
+  { code: 'CU', country: 'Cuba', countryEs: 'Cuba', dial: '+53', flag: '🇨🇺' },
+  { code: 'JM', country: 'Jamaica', countryEs: 'Jamaica', dial: '+1', flag: '🇯🇲' },
+  { code: 'HT', country: 'Haiti', countryEs: 'Haití', dial: '+509', flag: '🇭🇹' },
+  { code: 'TT', country: 'Trinidad and Tobago', countryEs: 'Trinidad y Tobago', dial: '+1', flag: '🇹🇹' },
+  { code: 'GB', country: 'United Kingdom', countryEs: 'Reino Unido', dial: '+44', flag: '🇬🇧' },
+  { code: 'FR', country: 'France', countryEs: 'Francia', dial: '+33', flag: '🇫🇷' },
+  { code: 'IT', country: 'Italy', countryEs: 'Italia', dial: '+39', flag: '🇮🇹' },
+  { code: 'DE', country: 'Germany', countryEs: 'Alemania', dial: '+49', flag: '🇩🇪' },
+  { code: 'PT', country: 'Portugal', countryEs: 'Portugal', dial: '+351', flag: '🇵🇹' },
+  { code: 'NL', country: 'Netherlands', countryEs: 'Países Bajos', dial: '+31', flag: '🇳🇱' },
+  { code: 'CH', country: 'Switzerland', countryEs: 'Suiza', dial: '+41', flag: '🇨🇭' },
+  { code: 'JP', country: 'Japan', countryEs: 'Japón', dial: '+81', flag: '🇯🇵' },
+  { code: 'KR', country: 'South Korea', countryEs: 'Corea del Sur', dial: '+82', flag: '🇰🇷' },
+  { code: 'CN', country: 'China', countryEs: 'China', dial: '+86', flag: '🇨🇳' },
+  { code: 'IN', country: 'India', countryEs: 'India', dial: '+91', flag: '🇮🇳' },
+  { code: 'AU', country: 'Australia', countryEs: 'Australia', dial: '+61', flag: '🇦🇺' },
+];
 
 const copy = {
   en: {
@@ -19,9 +68,12 @@ const copy = {
     name: 'Name',
     email: 'Email',
     instagram: 'Instagram username',
-    phone: 'Phone or WhatsApp',
+    phone: 'WhatsApp',
+    countryCode: 'Country code',
+    countrySearch: 'Search country or code',
+    noCountries: 'No matching country found.',
     contact: 'Preferred contact method',
-    contactHelp: 'Provide at least one contact option and select the one Hans should use first.',
+    contactHelp: 'Choose how Hans should reply. The matching field becomes required.',
     style: 'Style',
     size: 'Approximate width',
     placement: 'Placement',
@@ -35,7 +87,7 @@ const copy = {
     required: 'Required',
     serverError: 'Your request could not be sent. Please try again. If the problem continues, contact @hansttoo on Instagram.',
     unavailable: 'Online consultation requests are not configured yet. Please contact @hansttoo on Instagram.',
-    contactMethods: { email: 'Email', instagram: 'Instagram', phone: 'Phone / WhatsApp' },
+    contactMethods: { email: 'Email', instagram: 'Instagram', whatsapp: 'WhatsApp' },
     styles: { anime: 'Anime / Manga', microrealism: 'Microrealism', fineline: 'Fine Line' },
     inches: 'inches',
   },
@@ -46,9 +98,12 @@ const copy = {
     name: 'Nombre',
     email: 'Correo electrónico',
     instagram: 'Usuario de Instagram',
-    phone: 'Teléfono o WhatsApp',
+    phone: 'WhatsApp',
+    countryCode: 'Código de país',
+    countrySearch: 'Buscar país o código',
+    noCountries: 'No se encontró ese país.',
     contact: 'Método de contacto preferido',
-    contactHelp: 'Proporciona al menos una opción de contacto y elige cuál debe usar Hans primero.',
+    contactHelp: 'Elige cómo debe responder Hans. El campo correspondiente será obligatorio.',
     style: 'Estilo',
     size: 'Ancho aproximado',
     placement: 'Zona',
@@ -62,7 +117,7 @@ const copy = {
     required: 'Obligatorio',
     serverError: 'No se pudo enviar tu solicitud. Inténtalo de nuevo. Si el problema continúa, contacta a @hansttoo en Instagram.',
     unavailable: 'Las consultas en línea aún no están configuradas. Contacta a @hansttoo en Instagram.',
-    contactMethods: { email: 'Correo', instagram: 'Instagram', phone: 'Teléfono / WhatsApp' },
+    contactMethods: { email: 'Correo', instagram: 'Instagram', whatsapp: 'WhatsApp' },
     styles: { anime: 'Anime / Manga', microrealism: 'Microrrealismo', fineline: 'Línea fina' },
     inches: 'pulgadas',
   },
@@ -71,6 +126,152 @@ const copy = {
 const inputClass = 'mt-2 min-h-12 w-full rounded-2xl border border-stone-300 bg-white px-4 text-base text-stone-950 outline-none transition placeholder:text-stone-400 focus:border-stone-950 focus:ring-2 focus:ring-stone-950/10';
 const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const maxFileBytes = 5 * 1024 * 1024;
+
+function localeCountryCode() {
+  if (typeof navigator === 'undefined') return 'US';
+  const localeRegion = navigator.language.split('-')[1]?.toUpperCase();
+  return countryCodes.some((country) => country.code === localeRegion) ? localeRegion : 'US';
+}
+
+function countryName(country: CountryCode, language: Language) {
+  return language === 'en' ? country.country : country.countryEs;
+}
+
+function StylePicker({ language, value, onChange }: { language: Language; value: TattooStyle; onChange: (style: TattooStyle) => void }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const options: { value: TattooStyle; label: string }[] = language === 'en'
+    ? [
+        { value: 'anime', label: 'Anime / Manga' },
+        { value: 'microrealism', label: 'Microrealism' },
+        { value: 'fineline', label: 'Fine Line' },
+      ]
+    : [
+        { value: 'anime', label: 'Anime / Manga' },
+        { value: 'microrealism', label: 'Microrrealismo' },
+        { value: 'fineline', label: 'Línea fina' },
+      ];
+  const selected = options.find((option) => option.value === value) || options[0];
+
+  useEffect(() => {
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', closeOnOutsideClick);
+    return () => document.removeEventListener('pointerdown', closeOnOutsideClick);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative mt-2" onKeyDown={(event) => event.key === 'Escape' && setOpen(false)}>
+      <button
+        id="style"
+        type="button"
+        className="flex min-h-12 w-full items-center justify-between rounded-2xl border border-stone-300 bg-white px-4 text-left text-base font-bold text-stone-950 outline-none transition hover:border-stone-500 focus:border-stone-950 focus:ring-2 focus:ring-stone-950/10"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-labelledby="style-label style"
+        onClick={() => setOpen((valueOpen) => !valueOpen)}
+      >
+        <span>{selected.label}</span>
+        <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
+      </button>
+      {open ? (
+        <div role="listbox" aria-label={language === 'en' ? 'Tattoo style' : 'Estilo de tatuaje'} className="absolute z-30 mt-2 w-full overflow-hidden rounded-2xl border border-stone-200 bg-white p-1.5 shadow-2xl shadow-stone-950/15">
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="option"
+              aria-selected={value === option.value}
+              className={`flex min-h-11 w-full items-center justify-between rounded-xl px-3 text-left text-sm font-bold transition ${value === option.value ? 'bg-stone-950 text-white' : 'text-stone-700 hover:bg-stone-100 hover:text-stone-950'}`}
+              onClick={() => {
+                onChange(option.value);
+                setOpen(false);
+              }}
+            >
+              {option.label}
+              {value === option.value ? <Check className="h-4 w-4" aria-hidden="true" /> : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function CountryCodePicker({ language, value, onChange }: { language: Language; value: CountryCode; onChange: (country: CountryCode) => void }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const filteredCountries = countryCodes.filter((country) => (
+    !normalizedQuery
+    || country.country.toLocaleLowerCase().includes(normalizedQuery)
+    || country.countryEs.toLocaleLowerCase().includes(normalizedQuery)
+    || country.code.toLocaleLowerCase().includes(normalizedQuery)
+    || country.dial.includes(normalizedQuery)
+  ));
+
+  useEffect(() => {
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', closeOnOutsideClick);
+    return () => document.removeEventListener('pointerdown', closeOnOutsideClick);
+  }, []);
+
+  useEffect(() => {
+    if (open) window.setTimeout(() => searchRef.current?.focus(), 0);
+    else setQuery('');
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="relative mt-2" onKeyDown={(event) => event.key === 'Escape' && setOpen(false)}>
+      <button
+        id="country-code"
+        type="button"
+        className="flex min-h-12 w-full items-center justify-between rounded-2xl border border-stone-300 bg-white px-3 text-left text-base font-bold text-stone-950 outline-none transition hover:border-stone-500 focus:border-stone-950 focus:ring-2 focus:ring-stone-950/10"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-label={`${language === 'en' ? 'Country code' : 'Código de país'}: ${countryName(value, language)} ${value.dial}`}
+        onClick={() => setOpen((valueOpen) => !valueOpen)}
+      >
+        <span className="inline-flex min-w-0 items-center gap-2"><span aria-hidden="true">{value.flag}</span><span>{value.dial}</span></span>
+        <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
+      </button>
+      {open ? (
+        <div className="absolute left-0 z-40 mt-2 w-[min(22rem,calc(100vw-2.5rem))] overflow-hidden rounded-2xl border border-stone-200 bg-white p-2 shadow-2xl shadow-stone-950/20" role="dialog" aria-label={language === 'en' ? 'Choose country code' : 'Elegir código de país'}>
+          <label className="relative block">
+            <span className="sr-only">{language === 'en' ? 'Search country or code' : 'Buscar país o código'}</span>
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden="true" />
+            <input ref={searchRef} type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={language === 'en' ? 'Search country or code' : 'Buscar país o código'} className="min-h-11 w-full rounded-xl border border-stone-300 bg-stone-50 pl-9 pr-3 text-sm outline-none focus:border-stone-950 focus:ring-2 focus:ring-stone-950/10" />
+          </label>
+          <div className="mt-2 max-h-64 overflow-y-auto overscroll-contain" role="listbox">
+            {filteredCountries.length ? filteredCountries.map((country) => (
+              <button
+                key={country.code}
+                type="button"
+                role="option"
+                aria-selected={country.code === value.code}
+                className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm transition ${country.code === value.code ? 'bg-stone-950 font-bold text-white' : 'text-stone-700 hover:bg-stone-100 hover:text-stone-950'}`}
+                onClick={() => {
+                  onChange(country);
+                  setOpen(false);
+                }}
+              >
+                <span className="text-lg" aria-hidden="true">{country.flag}</span>
+                <span className="min-w-0 flex-1 truncate">{countryName(country, language)}</span>
+                <span className={country.code === value.code ? 'text-stone-300' : 'text-stone-500'}>{country.dial}</span>
+                {country.code === value.code ? <Check className="h-4 w-4 shrink-0" aria-hidden="true" /> : null}
+              </button>
+            )) : <p className="px-3 py-5 text-center text-sm text-stone-500">{language === 'en' ? 'No matching country found.' : 'No se encontró ese país.'}</p>}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 function fileToDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -89,6 +290,7 @@ export default function InquiryForm({ language, preselectedStyle, onInquirySubmi
   const [email, setEmail] = useState('');
   const [instagram, setInstagram] = useState('');
   const [phone, setPhone] = useState('');
+  const [country, setCountry] = useState<CountryCode>(() => countryCodes.find((item) => item.code === localeCountryCode()) || countryCodes[0]);
   const [preferredContactMethod, setPreferredContactMethod] = useState<ContactMethod>('email');
   const [style, setStyle] = useState<TattooStyle>('anime');
   const [sizeInches, setSizeInches] = useState('4');
@@ -109,6 +311,32 @@ export default function InquiryForm({ language, preselectedStyle, onInquirySubmi
     const inches = Number(sizeInches);
     return Number.isFinite(inches) ? Math.round(inches * 2.54 * 10) / 10 : 0;
   }, [sizeInches]);
+
+  const phoneE164 = useMemo(() => {
+    const nationalDigits = phone.replace(/\D/g, '');
+    return nationalDigits ? `${country.dial}${nationalDigits}` : '';
+  }, [country.dial, phone]);
+
+  const handleWhatsAppChange = (value: string) => {
+    if (!value.trim().startsWith('+')) {
+      setPhone(value);
+      return;
+    }
+
+    const digits = value.replace(/\D/g, '');
+    const matchingDial = Array.from(new Set(countryCodes.map((item) => item.dial.replace(/\D/g, ''))))
+      .sort((first, second) => second.length - first.length)
+      .find((dialDigits) => digits.startsWith(dialDigits));
+    if (!matchingDial) {
+      setPhone(value);
+      return;
+    }
+
+    const matches = countryCodes.filter((item) => item.dial.replace(/\D/g, '') === matchingDial);
+    const detectedCountry = matches.find((item) => item.code === country.code) || matches[0];
+    if (detectedCountry) setCountry(detectedCountry);
+    setPhone(digits.slice(matchingDial.length));
+  };
 
   const handleFiles = async (event: ChangeEvent<HTMLInputElement>) => {
     const files: File[] = event.target.files ? Array.from(event.target.files) : [];
@@ -135,11 +363,13 @@ export default function InquiryForm({ language, preselectedStyle, onInquirySubmi
   const validate = () => {
     const next: FormErrors = {};
     if (!fullName.trim()) next.fullName = language === 'en' ? 'Enter your name.' : 'Escribe tu nombre.';
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) next.email = language === 'en' ? 'Enter a valid email.' : 'Escribe un correo válido.';
-    if (!email.trim() && !instagram.trim() && !phone.trim()) next.contact = language === 'en' ? 'Provide an email, Instagram username, or phone number.' : 'Proporciona un correo, usuario de Instagram o teléfono.';
-    if (preferredContactMethod === 'email' && !email.trim()) next.preferredContact = language === 'en' ? 'Add an email or choose another contact method.' : 'Añade un correo o elige otro método.';
-    if (preferredContactMethod === 'instagram' && !instagram.trim()) next.preferredContact = language === 'en' ? 'Add an Instagram username or choose another contact method.' : 'Añade un usuario de Instagram o elige otro método.';
-    if (preferredContactMethod === 'phone' && !phone.trim()) next.preferredContact = language === 'en' ? 'Add a phone number or choose another contact method.' : 'Añade un teléfono o elige otro método.';
+    if (preferredContactMethod === 'email' && !email.trim()) next.email = language === 'en' ? 'Email is required for your selected contact method.' : 'El correo es obligatorio para el método elegido.';
+    else if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) next.email = language === 'en' ? 'Enter a valid email.' : 'Escribe un correo válido.';
+    if (preferredContactMethod === 'instagram' && !instagram.trim()) next.instagram = language === 'en' ? 'Instagram username is required for your selected contact method.' : 'El usuario de Instagram es obligatorio para el método elegido.';
+    else if (instagram.trim() && !/^@?[A-Za-z0-9._]{1,30}$/.test(instagram.trim())) next.instagram = language === 'en' ? 'Enter a valid Instagram username.' : 'Escribe un usuario de Instagram válido.';
+    const whatsAppDigitCount = phoneE164.replace(/\D/g, '').length;
+    if (preferredContactMethod === 'whatsapp' && !phone.trim()) next.phone = language === 'en' ? 'WhatsApp is required for your selected contact method.' : 'WhatsApp es obligatorio para el método elegido.';
+    else if (phone.trim() && (whatsAppDigitCount < 7 || whatsAppDigitCount > 15)) next.phone = language === 'en' ? 'Enter a valid WhatsApp number.' : 'Escribe un número de WhatsApp válido.';
     if (!placement.trim()) next.placement = language === 'en' ? 'Enter the placement.' : 'Escribe la zona.';
     if (!sizeCm || sizeCm < 1.3 || sizeCm > 127) next.size = language === 'en' ? 'Enter a size from 0.5 to 50 inches.' : 'Escribe un tamaño entre 0.5 y 50 pulgadas.';
     if (description.trim().length < 15) next.description = language === 'en' ? 'Describe your idea in at least 15 characters.' : 'Describe tu idea con al menos 15 caracteres.';
@@ -167,7 +397,7 @@ export default function InquiryForm({ language, preselectedStyle, onInquirySubmi
       id: 'inq-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)),
       fullName: fullName.trim(),
       email: email.trim(),
-      phone: phone.trim(),
+      phone: phoneE164,
       instagram: normalizedInstagram,
       preferredContactMethod,
       style,
@@ -215,41 +445,46 @@ export default function InquiryForm({ language, preselectedStyle, onInquirySubmi
               <input id="full-name" autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} className={inputClass} aria-invalid={Boolean(errors.fullName)} aria-describedby={errors.fullName ? 'fullName-error' : undefined} />
               {fieldError('fullName')}
             </label>
-            <label className="block text-sm font-black" htmlFor="email">{t.email}
-              <input id="email" type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className={inputClass} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'email-error' : undefined} />
+            <label className="block text-sm font-black" htmlFor="email">{t.email} {preferredContactMethod === 'email' ? <span className="text-[#C9362B]">*</span> : null}
+              <input id="email" type="email" inputMode="email" autoComplete="email" required={preferredContactMethod === 'email'} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className={inputClass} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'email-error' : undefined} />
               {fieldError('email')}
             </label>
-            <label className="block text-sm font-black" htmlFor="instagram">{t.instagram}
-              <input id="instagram" autoComplete="off" value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="@yourusername" className={inputClass} />
+            <label className="block text-sm font-black" htmlFor="instagram">{t.instagram} {preferredContactMethod === 'instagram' ? <span className="text-[#C9362B]">*</span> : null}
+              <input id="instagram" autoComplete="off" required={preferredContactMethod === 'instagram'} value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="@yourusername" className={inputClass} aria-invalid={Boolean(errors.instagram)} aria-describedby={errors.instagram ? 'instagram-error' : undefined} />
+              {fieldError('instagram')}
             </label>
-            <label className="block text-sm font-black" htmlFor="phone">{t.phone}
-              <input id="phone" type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 212 555 0123" className={inputClass} />
-            </label>
+            <div className="block text-sm font-black">
+              <span>{t.phone} {preferredContactMethod === 'whatsapp' ? <span className="text-[#C9362B]">*</span> : null}</span>
+              <div className="grid grid-cols-[8.5rem_minmax(0,1fr)] gap-2">
+                <CountryCodePicker language={language} value={country} onChange={setCountry} />
+                <label className="block" htmlFor="phone">
+                  <span className="sr-only">{language === 'en' ? 'WhatsApp number' : 'Número de WhatsApp'}</span>
+                  <input id="phone" type="tel" inputMode="tel" autoComplete="tel-national" required={preferredContactMethod === 'whatsapp'} value={phone} onChange={(event) => handleWhatsAppChange(event.target.value)} placeholder="212 555 0123" className={inputClass} aria-invalid={Boolean(errors.phone)} aria-describedby={errors.phone ? 'phone-error' : 'whatsapp-help'} />
+                </label>
+              </div>
+              <p id="whatsapp-help" className="mt-2 text-xs font-normal text-stone-500">{language === 'en' ? 'Paste an international number to detect its country code.' : 'Pega un número internacional para detectar su código de país.'}</p>
+              {fieldError('phone')}
+            </div>
           </div>
-          {fieldError('contact')}
 
           <fieldset className="mt-6">
             <legend className="text-sm font-black">{t.contact} <span className="text-[#C9362B]">*</span></legend>
             <p className="mt-1 text-sm text-stone-500">{t.contactHelp}</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              {(['email', 'instagram', 'phone'] as ContactMethod[]).map((method) => (
+              {(['email', 'instagram', 'whatsapp'] as ContactMethod[]).map((method) => (
                 <label key={method} className={'cursor-pointer rounded-full border px-4 py-2 text-sm font-bold ' + (preferredContactMethod === method ? 'border-stone-950 bg-stone-950 text-white' : 'border-stone-300 bg-white text-stone-700')}>
                   <input type="radio" className="sr-only" name="preferred-contact" value={method} checked={preferredContactMethod === method} onChange={() => setPreferredContactMethod(method)} />
                   {t.contactMethods[method]}
                 </label>
               ))}
             </div>
-            {fieldError('preferredContact')}
           </fieldset>
 
           <div className="mt-8 grid gap-6 sm:grid-cols-2">
-            <label className="block text-sm font-black" htmlFor="style">{t.style} <span className="text-[#C9362B]">*</span>
-              <select id="style" value={style} onChange={(e) => setStyle(e.target.value as TattooStyle)} className={inputClass}>
-                <option value="anime">{t.styles.anime}</option>
-                <option value="microrealism">{t.styles.microrealism}</option>
-                <option value="fineline">{t.styles.fineline}</option>
-              </select>
-            </label>
+            <div className="block text-sm font-black">
+              <span id="style-label">{t.style} <span className="text-[#C9362B]">*</span></span>
+              <StylePicker language={language} value={style} onChange={setStyle} />
+            </div>
             <label className="block text-sm font-black" htmlFor="size">{t.size} <span className="text-[#C9362B]">*</span>
               <div className="relative">
                 <input id="size" type="number" min="0.5" max="50" step="0.25" inputMode="decimal" value={sizeInches} onChange={(e) => setSizeInches(e.target.value)} className={inputClass + ' pr-24'} aria-invalid={Boolean(errors.size)} aria-describedby="size-help" />

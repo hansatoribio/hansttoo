@@ -42,13 +42,18 @@ test('SEO identifies Hans as a person without invented phone data', async () => 
   assert.match(html, /Independent tattoo artist in Midtown Manhattan/);
 });
 
-test('consultation form keeps references optional and links privacy', async () => {
+test('consultation form keeps references optional, contact-specific requirements, and links privacy', async () => {
   const form = await readFile('src/components/InquiryForm.tsx', 'utf8');
   assert.match(form, /Reference images \(optional\)/);
   assert.match(form, /'\/es\/privacy' : '\/privacy'/);
   assert.doesNotMatch(form, /placementPhoto/);
   assert.doesNotMatch(form, /validationImages/);
-  assert.match(form, /\+1 212 555 0123/);
+  assert.match(form, /contactMethods: \{ email: 'Email', instagram: 'Instagram', whatsapp: 'WhatsApp' \}/);
+  assert.match(form, /preferredContactMethod === 'instagram'.*!instagram\.trim\(\)/s);
+  assert.match(form, /preferredContactMethod === 'whatsapp'.*!phone\.trim\(\)/s);
+  assert.match(form, /CountryCodePicker/);
+  assert.match(form, /Paste an international number to detect its country code/);
+  assert.doesNotMatch(form, /Phone \/ WhatsApp|Phone or WhatsApp/);
 });
 
 test('tracking uses environment configuration and USD', async () => {
