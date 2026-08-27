@@ -55,13 +55,22 @@ export default function App() {
     return 'en';
   });
 
-  // Leads/Inquiries State - Synced with LocalStorage and loaded directly from Supabase
+  // Leads/Inquiries State - Synced with LocalStorage and loaded directly from Supabase (Cleaned of mock data)
   const [inquiries, setInquiries] = useState<Inquiry[]>(() => {
     const stored = localStorage.getItem('hans_inquiries');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          // Filter out dummy/mock test data to ensure clean workspace
+          return parsed.filter((i: Inquiry) => 
+            !i.id?.startsWith('lead-') && 
+            !i.email?.includes('example.com') &&
+            i.fullName !== 'Clara Ross' &&
+            i.fullName !== 'Marc Evans' &&
+            i.fullName !== 'Yuki Tanaka'
+          );
+        }
       } catch (e) {
         console.error("Failed to parse stored inquiries", e);
       }
@@ -211,9 +220,16 @@ export default function App() {
     if (isSupabaseConfigured) {
       fetchInquiriesFromSupabase().then((supabaseInquiries) => {
         if (supabaseInquiries && supabaseInquiries.length > 0) {
+          const cleanItems = supabaseInquiries.filter(i => 
+            !i.id?.startsWith('lead-') && 
+            !i.email?.includes('example.com') &&
+            i.fullName !== 'Clara Ross' &&
+            i.fullName !== 'Marc Evans' &&
+            i.fullName !== 'Yuki Tanaka'
+          );
           setInquiries((prev) => {
             const existingIds = new Set(prev.map(i => i.id));
-            const freshItems = supabaseInquiries.filter(i => !existingIds.has(i.id));
+            const freshItems = cleanItems.filter(i => !existingIds.has(i.id));
             return [...freshItems, ...prev];
           });
         }
@@ -278,13 +294,20 @@ export default function App() {
     return localStorage.getItem('hans_seo_keywords') || 'Hans Tattoo, tattoo artist New York, fine line tattoo NY, microrealism tattoo, anime tattoo Times Square, tattoo studio NYC';
   });
 
-  // Subscribers / Waiting List State - Synced with LocalStorage
+  // Subscribers / Waiting List State - Synced with LocalStorage (Cleaned of mock data)
   const [subscribers, setSubscribers] = useState<string[]>(() => {
     const stored = localStorage.getItem('hans_subscribers');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter((sub: string) => 
+            !sub.includes('example.com') &&
+            sub !== 'clara.ross@example.com' &&
+            sub !== 'marc.evans@example.com' &&
+            sub !== 'yuki.t@example.com'
+          );
+        }
       } catch (e) {
         console.error("Failed to parse stored subscribers", e);
       }
@@ -534,6 +557,23 @@ export default function App() {
         ? 'Inquiry deleted successfully'
         : 'Consulta eliminada correctamente',
       'info'
+    );
+  };
+
+  // Callback: Artist purges all test/demo data to start 100% clean
+  const handleClearAllTestData = () => {
+    setInquiries([]);
+    localStorage.removeItem('hans_inquiries');
+    localStorage.setItem('hans_inquiries', '[]');
+    setSubscribers([]);
+    localStorage.removeItem('hans_subscribers');
+    localStorage.setItem('hans_subscribers', '[]');
+    localStorage.removeItem('hans_synced_inquiry_ids');
+    showToast(
+      language === 'en'
+        ? 'Database cleaned! All demo/test inquiries and subscribers removed.'
+        : '¡Base de datos limpia! Se han eliminado todas las consultas y suscriptores de prueba.',
+      'success'
     );
   };
 
@@ -788,6 +828,7 @@ export default function App() {
               onUpdateMedicalNotes={handleUpdateMedicalNotes}
               onDeleteInquiry={handleDeleteInquiry}
               onLoadDemoData={handleLoadDemoData}
+              onClearAllData={handleClearAllTestData}
               showToast={showToast}
               instagramUsername={instagramUsername}
               setInstagramUsername={setInstagramUsername}

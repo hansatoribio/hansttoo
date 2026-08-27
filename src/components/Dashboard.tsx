@@ -36,6 +36,7 @@ interface DashboardProps {
   onUpdateMedicalNotes: (id: string, notes: string) => void;
   onDeleteInquiry: (id: string) => void;
   onLoadDemoData: () => void;
+  onClearAllData?: () => void;
   showToast: (message: string, type?: 'success' | 'info' | 'error') => void;
   instagramUsername: string;
   setInstagramUsername: (val: string) => void;
@@ -70,6 +71,7 @@ export default function Dashboard({
   onUpdateMedicalNotes,
   onDeleteInquiry,
   onLoadDemoData,
+  onClearAllData,
   showToast,
   instagramUsername,
   setInstagramUsername,
@@ -213,18 +215,38 @@ export default function Dashboard({
   }, [syncedIds]);
 
   // Handle Google OAuth connecting inside dashboard
+  const [authDomainError, setAuthDomainError] = useState<boolean>(false);
+
   const handleConnectGoogle = async () => {
     try {
+      setAuthDomainError(false);
       const res = await googleSignIn();
       if (res) {
         setGoogleUser({
           email: res.user.email || undefined,
           name: res.user.displayName || undefined
         });
+        showToast(
+          language === 'en' ? 'Connected to Google Workspace successfully!' : '¡Cuenta de Google conectada con éxito!',
+          'success'
+        );
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Google Sign in failed:', err);
-      alert('Failed to connect Google account.');
+      if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('unauthorized-domain')) {
+        setAuthDomainError(true);
+        showToast(
+          language === 'en'
+            ? 'Firebase Domain Authorization needed: Please add hansttoo.vercel.app to Authorized Domains in Firebase Console.'
+            : 'Se requiere autorizar el dominio: Agrega hansttoo.vercel.app en Firebase Console > Authentication > Settings > Authorized domains.',
+          'error'
+        );
+      } else {
+        showToast(
+          language === 'en' ? 'Failed to connect Google account.' : 'No se pudo conectar la cuenta de Google.',
+          'error'
+        );
+      }
     }
   };
 
@@ -994,6 +1016,26 @@ export default function Dashboard({
               {language === 'en' ? 'Download CSV Backup' : 'Respaldo CSV'}
             </button>
 
+            {/* Clear Test Data / Reset to Clean */}
+            {onClearAllData && (
+              <button
+                onClick={() => {
+                  const confirmMsg = language === 'en'
+                    ? 'Are you sure you want to clear all test inquiries and subscribers? This will leave your dashboard 100% clean for real clients.'
+                    : '¿Estás seguro de que deseas vaciar todos los registros y suscriptores de prueba? Esto dejará tu panel 100% limpio para recibir clientes reales.';
+                  if (window.confirm(confirmMsg)) {
+                    onClearAllData();
+                  }
+                }}
+                className="inline-flex items-center px-4 py-2.5 rounded-full border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-black tracking-wider uppercase transition-all cursor-pointer shadow-sm"
+                id="dashboard-clear-test-data-btn"
+                title={language === 'en' ? 'Clear all mock test inquiries and subscribers' : 'Vaciar todas las consultas y suscriptores de prueba'}
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1.5 text-amber-600" />
+                {language === 'en' ? 'Clear Test Data' : 'Limpiar Datos de Prueba'}
+              </button>
+            )}
+
             {/* Exit to Client View */}
             <button
               onClick={() => setIsAdminMode?.(false)}
@@ -1598,9 +1640,30 @@ export default function Dashboard({
           </div>
 
           {filteredInquiries.length === 0 && (
-            <div className="p-12 text-center text-stone-400 font-bold uppercase tracking-wider text-xs">
-              <AlertCircle className="w-8 h-8 text-[#E53E3E] mx-auto mb-3" />
-              {t.portalNoLeads}
+            <div className="p-16 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center mx-auto text-stone-400">
+                <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-sm font-black uppercase text-stone-800 tracking-wider">
+                  {language === 'en' ? 'Workspace Clean & Ready' : 'Bandeja de Consultas Limpia'}
+                </h4>
+                <p className="text-xs text-stone-400 max-w-sm mx-auto leading-relaxed">
+                  {language === 'en'
+                    ? 'No consultation inquiries yet. Real submissions from clients on the website will automatically arrive here in real time.'
+                    : 'Aún no hay consultas registradas. Las solicitudes reales de los clientes que completen el formulario web aparecerán aquí automáticamente en tiempo real.'}
+                </p>
+              </div>
+              {onLoadDemoData && (
+                <div className="pt-2">
+                  <button
+                    onClick={onLoadDemoData}
+                    className="text-[10px] font-bold text-stone-400 hover:text-stone-700 underline uppercase tracking-wider transition-colors cursor-pointer"
+                  >
+                    {language === 'en' ? 'Load 3 sample demo leads' : 'Cargar 3 consultas de muestra (demo)'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -2424,6 +2487,20 @@ export default function Dashboard({
                       ? 'Link your tattoo Google account to automatically store consultation inquiries and referential artworks in Google Sheets & Drive.'
                       : 'Conecta tu cuenta de Google para organizar de manera segura todas tus solicitudes y fotos en Google Sheets y Google Drive.'}
                   </p>
+                  {authDomainError && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs text-amber-900 space-y-1.5 animate-fadeIn">
+                      <div className="font-bold flex items-center gap-1.5 text-amber-800">
+                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>{language === 'en' ? 'Domain Authorization Required (Firebase)' : 'Se requiere autorizar el dominio (Firebase)'}</span>
+                      </div>
+                      <p className="text-[11px] leading-relaxed text-amber-800/90">
+                        {language === 'en'
+                          ? 'To allow Google Login on hansttoo.vercel.app, please add "hansttoo.vercel.app" to Firebase Console > Authentication > Settings > Authorized domains.'
+                          : 'Para permitir iniciar sesión en hansttoo.vercel.app, agrega "hansttoo.vercel.app" en Firebase Console > Authentication > Settings > Authorized domains (Dominios Autorizados).'}
+                      </p>
+                    </div>
+                  )}
+
                   <button
                     onClick={handleConnectGoogle}
                     className="inline-flex items-center justify-center space-x-2 px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black tracking-wider uppercase transition-all cursor-pointer shadow-sm"
