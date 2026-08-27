@@ -37,6 +37,9 @@ test('SEO identifies Hans as a person without invented phone data', async () => 
   assert.match(html, /og-hansttoo\.jpg/);
   assert.doesNotMatch(html, /"telephone"/);
   assert.doesNotMatch(html, /TattooParlor/);
+  assert.match(html, /id="static-seo-content"/);
+  assert.match(html, /Selected tattoo work and specialties/);
+  assert.match(html, /Independent tattoo artist in Midtown Manhattan/);
 });
 
 test('consultation form keeps references optional and links privacy', async () => {
@@ -97,6 +100,8 @@ test('build prepares route-specific HTML for crawlable language metadata', async
   assert.match(generator, /path: 'admin'/);
   assert.match(generator, /path: 'es\/admin'/);
   assert.match(generator, /robots: 'noindex, nofollow'/);
+  assert.match(generator, /staticFallbacks\.esHome/);
+  assert.match(generator, /static-fallback:start/);
 });
 
 test('admin uses Supabase Auth and RLS without the removed visual editor', async () => {
