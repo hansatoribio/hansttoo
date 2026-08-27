@@ -144,7 +144,11 @@ export default function InquiryForm({ language, preselectedStyle, onInquirySubmi
     if (!sizeCm || sizeCm < 1.3 || sizeCm > 127) next.size = language === 'en' ? 'Enter a size from 0.5 to 50 inches.' : 'Escribe un tamaño entre 0.5 y 50 pulgadas.';
     if (description.trim().length < 15) next.description = language === 'en' ? 'Describe your idea in at least 15 characters.' : 'Describe tu idea con al menos 15 caracteres.';
     if (!consent) next.consent = language === 'en' ? 'Consent is required to send the request.' : 'El consentimiento es obligatorio.';
-    if (honeypot || Date.now() - formStartedAt.current < 1500) next.spam = language === 'en' ? 'Please wait a moment and try again.' : 'Espera un momento e inténtalo de nuevo.';
+    // Only surface the timing/honeypot check after the visitor-facing fields are valid.
+    // This keeps the error summary useful for people who submit an incomplete form quickly.
+    if (Object.keys(next).length === 0 && (honeypot || Date.now() - formStartedAt.current < 1500)) {
+      next.spam = language === 'en' ? 'Please wait a moment and try again.' : 'Espera un momento e inténtalo de nuevo.';
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   };
