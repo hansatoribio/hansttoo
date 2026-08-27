@@ -15,6 +15,7 @@ import FAQ from './components/FAQ';
 import AdminLoginModal from './components/AdminLoginModal';
 import InteractiveMap from './components/InteractiveMap';
 import Testimonials from './components/Testimonials';
+import InstagramFeed from './components/InstagramFeed';
 import MobileBottomNav from './components/MobileBottomNav';
 
 // Code-split heavy admin & editor components (Only loaded when Hans accesses admin)
@@ -172,10 +173,20 @@ export default function App() {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          if (!parsed.includes('instagram')) {
+            const aboutIdx = parsed.indexOf('about');
+            if (aboutIdx !== -1) {
+              parsed.splice(aboutIdx + 1, 0, 'instagram');
+            } else {
+              parsed.push('instagram');
+            }
+          }
+          return parsed;
+        }
       } catch (e) {}
     }
-    return ['hero', 'about', 'booking', 'portfolio', 'testimonials', 'faq', 'location'];
+    return ['hero', 'about', 'instagram', 'booking', 'portfolio', 'testimonials', 'faq', 'location'];
   });
 
   const moveSection = (index: number, direction: 'up' | 'down') => {
@@ -602,13 +613,16 @@ export default function App() {
       );
     } else if (type === 'image' && key) {
       if (key === 'artistPhoto') {
+        const mediaType = updatedData.mediaType || 'image';
         setCustomTranslations((prev: any) => ({
           ...prev,
-          artistPhoto: updatedData.url
+          artistPhoto: updatedData.url,
+          artistMediaType: mediaType
         }));
         localStorage.setItem('hans_custom_artist_photo', updatedData.url);
+        localStorage.setItem('hans_custom_artist_media_type', mediaType);
         showToast(
-          language === 'en' ? 'Artist bio photo updated!' : '¡Foto del artista actualizada con éxito!',
+          language === 'en' ? 'Artist bio media (photo/video) updated!' : '¡Foto/Video del artista actualizado con éxito!',
           'success'
         );
       } else if (key === 'newIntroPhoto') {
@@ -808,6 +822,7 @@ export default function App() {
             const sectionLabels: Record<string, { en: string; es: string }> = {
               hero: { en: 'Header & Intro Photos', es: 'Bloque: Encabezado & Fotos Intro' },
               about: { en: 'About Hans Toribio', es: 'Bloque: Sobre el Artista' },
+              instagram: { en: 'Live Instagram Community', es: 'Bloque: Feed de Instagram' },
               booking: { en: 'Tattoo Consultation Form', es: 'Bloque: Formulario de Cotización' },
               portfolio: { en: 'Tattoo Portfolio Gallery', es: 'Bloque: Galería de Portafolio' },
               testimonials: { en: 'Client Reviews', es: 'Bloque: Reseñas de Clientes' },
@@ -878,12 +893,25 @@ export default function App() {
                     customTranslations={customTranslations}
                   />
                 )}
+                {sectionId === 'instagram' && (
+                  <InstagramFeed
+                    language={language}
+                    instagramUsername={instagramUsername}
+                    instagramWidgetUrl={instagramWidgetUrl}
+                    isVisualEditMode={isVisualEditMode}
+                    onEditElement={(type, key, label, data) => setEditingElement({ type, key, data })}
+                    customTranslations={customTranslations}
+                  />
+                )}
                 {sectionId === 'booking' && (
                   <InquiryForm
                     language={language}
                     preselectedStyle={preselectedStyle}
                     preselectedDescription={preselectedDescription}
                     onInquirySubmitted={handleInquirySubmitted}
+                    isVisualEditMode={isVisualEditMode}
+                    onEditElement={(type, key, label, data) => setEditingElement({ type, key, data })}
+                    customTranslations={customTranslations}
                   />
                 )}
                 {sectionId === 'portfolio' && (
@@ -893,11 +921,15 @@ export default function App() {
                     portfolioItems={portfolioItems}
                     isVisualEditMode={isVisualEditMode}
                     onEditElement={(type, key, label, data) => setEditingElement({ type, key, id: data?.id, data })}
+                    customTranslations={customTranslations}
                   />
                 )}
                 {sectionId === 'testimonials' && (
                   <Testimonials 
                     language={language} 
+                    isVisualEditMode={isVisualEditMode}
+                    onEditElement={(type, key, label, data) => setEditingElement({ type, key, data })}
+                    customTranslations={customTranslations}
                   />
                 )}
                 {sectionId === 'faq' && (
@@ -906,11 +938,15 @@ export default function App() {
                     faqList={faqList}
                     isVisualEditMode={isVisualEditMode}
                     onEditElement={(type, key, label, data) => setEditingElement({ type, key, id: data?.id, data })}
+                    customTranslations={customTranslations}
                   />
                 )}
                 {sectionId === 'location' && (
                   <InteractiveMap
                     language={language}
+                    isVisualEditMode={isVisualEditMode}
+                    onEditElement={(type, key, label, data) => setEditingElement({ type, key, data })}
+                    customTranslations={customTranslations}
                   />
                 )}
               </div>

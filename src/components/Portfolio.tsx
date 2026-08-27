@@ -146,6 +146,7 @@ interface PortfolioProps {
   portfolioItems: PortfolioItem[];
   isVisualEditMode?: boolean;
   onEditElement?: (type: 'text' | 'image' | 'portfolio' | 'faq' | 'new-portfolio', key: string, label?: string, data?: any) => void;
+  customTranslations?: any;
 }
 
 export default function Portfolio({ 
@@ -153,9 +154,10 @@ export default function Portfolio({
   onInquireSimilar, 
   portfolioItems,
   isVisualEditMode = false,
-  onEditElement
+  onEditElement,
+  customTranslations
 }: PortfolioProps) {
-  const t = translations[language];
+  const t = customTranslations?.[language] || translations[language] || translations.en;
   const [selectedFilter, setSelectedFilter] = useState<TattooStyle | 'all'>('all');
   const [activeItem, setActiveItem] = useState<PortfolioItem | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -322,16 +324,52 @@ export default function Portfolio({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <span className="text-[10px] font-black tracking-[0.25em] text-[#E53E3E] uppercase flex items-center justify-center gap-1">
+        <div className="text-center max-w-3xl mx-auto mb-12 space-y-2">
+          <span
+            onClick={() => {
+              if (isVisualEditMode && onEditElement) {
+                onEditElement('text', 'portfolioBadge', 'Portfolio Section Badge', {
+                  en: customTranslations?.en?.portfolioBadge || 'SELECTED RECENT INK',
+                  es: customTranslations?.es?.portfolioBadge || 'RECIENTES SELECCIONADOS'
+                });
+              }
+            }}
+            className={`text-[10px] font-black tracking-[0.25em] text-[#E53E3E] uppercase inline-flex items-center justify-center gap-1 ${
+              isVisualEditMode ? 'cursor-pointer hover:underline' : ''
+            }`}
+          >
             {isVisualEditMode && <PenTool className="w-3.5 h-3.5" />}
-            {language === 'en' ? 'SELECTED RECENT INK' : 'RECIENTES SELECCIONADOS'}
+            {customTranslations?.[language]?.portfolioBadge || (language === 'en' ? 'SELECTED RECENT INK' : 'RECIENTES SELECCIONADOS')}
           </span>
-          <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tighter uppercase mt-2 leading-none">
-            {t.portfolioTitle}<span className="text-[#E53E3E]">.</span>
+          <h2
+            onClick={() => {
+              if (isVisualEditMode && onEditElement) {
+                onEditElement('text', 'portfolioTitle', 'Portfolio Section Title', {
+                  en: customTranslations?.en?.portfolioTitle || translations.en.portfolioTitle,
+                  es: customTranslations?.es?.portfolioTitle || translations.es.portfolioTitle
+                });
+              }
+            }}
+            className={`text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tighter uppercase leading-none ${
+              isVisualEditMode ? 'cursor-pointer border border-dashed border-amber-400 p-2 rounded-xl bg-amber-50/20' : ''
+            }`}
+          >
+            {t.portfolioTitle || translations[language].portfolioTitle}<span className="text-[#E53E3E]">.</span>
           </h2>
-          <p className="text-stone-500 text-sm mt-3 leading-relaxed font-sans">
-            {t.portfolioSubtitle}
+          <p
+            onClick={() => {
+              if (isVisualEditMode && onEditElement) {
+                onEditElement('text', 'portfolioSubtitle', 'Portfolio Section Subtitle', {
+                  en: customTranslations?.en?.portfolioSubtitle || translations.en.portfolioSubtitle,
+                  es: customTranslations?.es?.portfolioSubtitle || translations.es.portfolioSubtitle
+                });
+              }
+            }}
+            className={`text-stone-500 text-sm mt-3 leading-relaxed font-sans ${
+              isVisualEditMode ? 'cursor-pointer border border-dashed border-amber-400 p-1.5 rounded-lg bg-amber-50/20' : ''
+            }`}
+          >
+            {t.portfolioSubtitle || translations[language].portfolioSubtitle}
           </p>
 
           {/* Filter Tabs */}

@@ -9,15 +9,21 @@ interface InquiryFormProps {
   preselectedStyle: TattooStyle | null;
   preselectedDescription?: string | null;
   onInquirySubmitted: (inquiry: Inquiry) => void;
+  isVisualEditMode?: boolean;
+  onEditElement?: (type: 'text' | 'image' | 'portfolio' | 'faq', key: string, label?: string, data?: any) => void;
+  customTranslations?: any;
 }
 
 export default function InquiryForm({
   language,
   preselectedStyle,
   preselectedDescription,
-  onInquirySubmitted
+  onInquirySubmitted,
+  isVisualEditMode = false,
+  onEditElement,
+  customTranslations
 }: InquiryFormProps) {
-  const t = translations[language];
+  const t = customTranslations?.[language] || translations[language] || translations.en;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form State
@@ -314,17 +320,53 @@ export default function InquiryForm({
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         
         {/* Form Header */}
-        <div className="text-center mb-12">
-          <span className="text-[10px] font-black tracking-[0.25em] text-[#1A1A1A]/40 uppercase">
-            {language === 'en' ? 'RESERVE A SESSION' : 'SOLICITUD DE TATUAJE'}
+        <div className="text-center mb-12 space-y-2">
+          <span
+            onClick={() => {
+              if (isVisualEditMode && onEditElement) {
+                onEditElement('text', 'bookBadge', 'Consultation Form Badge', {
+                  en: customTranslations?.en?.bookBadge || 'RESERVE A SESSION',
+                  es: customTranslations?.es?.bookBadge || 'SOLICITUD DE TATUAJE'
+                });
+              }
+            }}
+            className={`text-[10px] font-black tracking-[0.25em] text-[#1A1A1A]/40 uppercase inline-block ${
+              isVisualEditMode ? 'cursor-pointer hover:underline text-amber-600' : ''
+            }`}
+          >
+            {customTranslations?.[language]?.bookBadge || (language === 'en' ? 'RESERVE A SESSION' : 'SOLICITUD DE TATUAJE')}
           </span>
-          <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tighter uppercase mt-2">
-            {language === 'en' ? 'CONSULTATION FORM' : 'FORMULARIO DE CONSULTA'}<span className="text-[#E53E3E]">.</span>
+          <h2
+            onClick={() => {
+              if (isVisualEditMode && onEditElement) {
+                onEditElement('text', 'bookTitle', 'Consultation Form Title', {
+                  en: customTranslations?.en?.bookTitle || (language === 'en' ? 'CONSULTATION FORM' : 'FORMULARIO DE CONSULTA'),
+                  es: customTranslations?.es?.bookTitle || (language === 'en' ? 'CONSULTATION FORM' : 'FORMULARIO DE CONSULTA')
+                });
+              }
+            }}
+            className={`text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tighter uppercase leading-none ${
+              isVisualEditMode ? 'cursor-pointer border border-dashed border-amber-400 p-2 rounded-xl bg-amber-50/20' : ''
+            }`}
+          >
+            {t.bookTitle || (language === 'en' ? 'CONSULTATION FORM' : 'FORMULARIO DE CONSULTA')}<span className="text-[#E53E3E]">.</span>
           </h2>
-          <p className="text-stone-500 text-sm mt-3 leading-relaxed max-w-2xl mx-auto font-sans">
-            {language === 'en'
+          <p
+            onClick={() => {
+              if (isVisualEditMode && onEditElement) {
+                onEditElement('text', 'bookSubtitle', 'Consultation Form Subtitle', {
+                  en: customTranslations?.en?.bookSubtitle || (language === 'en' ? 'Complete this single sheet to request your custom design. I personally review all inquiries.' : 'Completa esta ficha para solicitar tu diseño personalizado. Reviso cada consulta personalmente.'),
+                  es: customTranslations?.es?.bookSubtitle || (language === 'en' ? 'Complete this single sheet to request your custom design. I personally review all inquiries.' : 'Completa esta ficha para solicitar tu diseño personalizado. Reviso cada consulta personalmente.')
+                });
+              }
+            }}
+            className={`text-stone-500 text-sm mt-3 leading-relaxed max-w-2xl mx-auto font-sans ${
+              isVisualEditMode ? 'cursor-pointer border border-dashed border-amber-400 p-1.5 rounded-lg bg-amber-50/20' : ''
+            }`}
+          >
+            {t.bookSubtitle || (language === 'en'
               ? 'Complete this single sheet to request your custom design. I personally review all inquiries.'
-              : 'Completa esta ficha para solicitar tu diseño personalizado. Reviso cada consulta personalmente.'}
+              : 'Completa esta ficha para solicitar tu diseño personalizado. Reviso cada consulta personalmente.')}
           </p>
         </div>
 

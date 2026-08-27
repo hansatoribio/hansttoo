@@ -20,7 +20,7 @@ export default defineConfig(() => {
     },
     build: {
       target: 'esnext',
-      minify: 'esbuild',
+      minify: 'esbuild' as const,
       cssMinify: true,
       chunkSizeWarningLimit: 800,
       rollupOptions: {

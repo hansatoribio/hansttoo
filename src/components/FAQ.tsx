@@ -9,15 +9,17 @@ interface FAQProps {
   faqList: Array<{ id: string; qEn: string; qEs: string; aEn: string; aEs: string }>;
   isVisualEditMode?: boolean;
   onEditElement?: (type: 'text' | 'image' | 'portfolio' | 'faq' | 'new-faq', key: string, label?: string, data?: any) => void;
+  customTranslations?: any;
 }
 
 export default function FAQ({ 
   language,
   faqList,
   isVisualEditMode = false,
-  onEditElement
+  onEditElement,
+  customTranslations
 }: FAQProps) {
-  const t = translations[language];
+  const t = customTranslations?.[language] || translations[language] || translations.en;
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const handleToggle = (index: number) => {
@@ -29,16 +31,52 @@ export default function FAQ({
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-[10px] font-black tracking-[0.25em] text-[#E53E3E] uppercase flex items-center justify-center gap-1">
+        <div className="text-center max-w-3xl mx-auto mb-16 space-y-2">
+          <span
+            onClick={() => {
+              if (isVisualEditMode && onEditElement) {
+                onEditElement('text', 'faqBadge', 'FAQ Section Badge', {
+                  en: customTranslations?.en?.faqBadge || 'COMMON QUESTIONS',
+                  es: customTranslations?.es?.faqBadge || 'PREGUNTAS COMUNES'
+                });
+              }
+            }}
+            className={`text-[10px] font-black tracking-[0.25em] text-[#E53E3E] uppercase inline-flex items-center justify-center gap-1 ${
+              isVisualEditMode ? 'cursor-pointer hover:underline' : ''
+            }`}
+          >
             {isVisualEditMode && <PenTool className="w-3.5 h-3.5" />}
-            {language === 'en' ? 'COMMON QUESTIONS' : 'PREGUNTAS COMUNES'}
+            {customTranslations?.[language]?.faqBadge || (language === 'en' ? 'COMMON QUESTIONS' : 'PREGUNTAS COMUNES')}
           </span>
-          <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tighter uppercase mt-2 leading-none">
-            {t.faqTitle}<span className="text-[#E53E3E]">.</span>
+          <h2
+            onClick={() => {
+              if (isVisualEditMode && onEditElement) {
+                onEditElement('text', 'faqTitle', 'FAQ Section Title', {
+                  en: customTranslations?.en?.faqTitle || translations.en.faqTitle,
+                  es: customTranslations?.es?.faqTitle || translations.es.faqTitle
+                });
+              }
+            }}
+            className={`text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tighter uppercase leading-none ${
+              isVisualEditMode ? 'cursor-pointer border border-dashed border-amber-400 p-2 rounded-xl bg-amber-50/20' : ''
+            }`}
+          >
+            {t.faqTitle || translations[language].faqTitle}<span className="text-[#E53E3E]">.</span>
           </h2>
-          <p className="text-stone-500 text-sm mt-3 leading-relaxed font-sans">
-            {t.faqSubtitle}
+          <p
+            onClick={() => {
+              if (isVisualEditMode && onEditElement) {
+                onEditElement('text', 'faqSubtitle', 'FAQ Section Subtitle', {
+                  en: customTranslations?.en?.faqSubtitle || translations.en.faqSubtitle,
+                  es: customTranslations?.es?.faqSubtitle || translations.es.faqSubtitle
+                });
+              }
+            }}
+            className={`text-stone-500 text-sm mt-3 leading-relaxed font-sans ${
+              isVisualEditMode ? 'cursor-pointer border border-dashed border-amber-400 p-1.5 rounded-lg bg-amber-50/20' : ''
+            }`}
+          >
+            {t.faqSubtitle || translations[language].faqSubtitle}
           </p>
         </div>
 

@@ -21,6 +21,9 @@ interface TestimonialItem {
 
 interface TestimonialsProps {
   language: Language;
+  isVisualEditMode?: boolean;
+  onEditElement?: (type: 'text' | 'image' | 'portfolio' | 'faq', key: string, label?: string, data?: any) => void;
+  customTranslations?: any;
 }
 
 const DEFAULT_TESTIMONIALS: TestimonialItem[] = [
@@ -96,8 +99,13 @@ const DEFAULT_TESTIMONIALS: TestimonialItem[] = [
   }
 ];
 
-export default function Testimonials({ language }: TestimonialsProps) {
-  const t = translations[language];
+export default function Testimonials({
+  language,
+  isVisualEditMode = false,
+  onEditElement,
+  customTranslations
+}: TestimonialsProps) {
+  const t = customTranslations?.[language] || translations[language] || translations.en;
   const [activeIndex, setActiveIndex] = useState(0);
 
   const nextTestimonial = () => {
@@ -122,18 +130,54 @@ export default function Testimonials({ language }: TestimonialsProps) {
         
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-          <span className="text-[10px] font-black tracking-[0.25em] text-[#E53E3E] uppercase flex items-center justify-center gap-1.5">
+          <span
+            onClick={() => {
+              if (isVisualEditMode && onEditElement) {
+                onEditElement('text', 'testimonialsBadge', 'Testimonials Badge', {
+                  en: customTranslations?.en?.testimonialsBadge || 'CLIENT TESTIMONIALS',
+                  es: customTranslations?.es?.testimonialsBadge || 'TESTIMONIOS DE CLIENTES'
+                });
+              }
+            }}
+            className={`text-[10px] font-black tracking-[0.25em] text-[#E53E3E] uppercase inline-flex items-center justify-center gap-1.5 ${
+              isVisualEditMode ? 'cursor-pointer hover:underline' : ''
+            }`}
+          >
             <Sparkles className="w-3.5 h-3.5" />
-            {language === 'en' ? 'CLIENT TESTIMONIALS' : 'TESTIMONIOS DE CLIENTES'}
+            {customTranslations?.[language]?.testimonialsBadge || (language === 'en' ? 'CLIENT TESTIMONIALS' : 'TESTIMONIOS DE CLIENTES')}
           </span>
-          <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tighter uppercase leading-none">
-            {language === 'en' ? 'CLIENT TRUST & EXPERIENCES' : 'CONFIANZA Y EXPERIENCIAS'}
+          <h2
+            onClick={() => {
+              if (isVisualEditMode && onEditElement) {
+                onEditElement('text', 'testimonialsTitle', 'Testimonials Title', {
+                  en: customTranslations?.en?.testimonialsTitle || (language === 'en' ? 'CLIENT TRUST & EXPERIENCES' : 'CONFIANZA Y EXPERIENCIAS'),
+                  es: customTranslations?.es?.testimonialsTitle || (language === 'en' ? 'CLIENT TRUST & EXPERIENCES' : 'CONFIANZA Y EXPERIENCIAS')
+                });
+              }
+            }}
+            className={`text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tighter uppercase leading-none ${
+              isVisualEditMode ? 'cursor-pointer border border-dashed border-amber-400 p-2 rounded-xl bg-amber-50/20' : ''
+            }`}
+          >
+            {customTranslations?.[language]?.testimonialsTitle || (language === 'en' ? 'CLIENT TRUST & EXPERIENCES' : 'CONFIANZA Y EXPERIENCIAS')}
             <span className="text-[#E53E3E]">.</span>
           </h2>
-          <p className="text-stone-500 text-xs sm:text-sm font-sans max-w-xl mx-auto leading-relaxed">
-            {language === 'en' 
+          <p
+            onClick={() => {
+              if (isVisualEditMode && onEditElement) {
+                onEditElement('text', 'testimonialsSubtitle', 'Testimonials Subtitle', {
+                  en: customTranslations?.en?.testimonialsSubtitle || (language === 'en' ? 'Real reviews from clients who entrusted their skin to Hans Toribio at Gara Art Studio, 240 W 40th St, New York.' : 'Reseñas reales de clientes que confiaron su piel a Hans Toribio en Gara Art Studio, 240 W 40th St, Nueva York.'),
+                  es: customTranslations?.es?.testimonialsSubtitle || (language === 'en' ? 'Real reviews from clients who entrusted their skin to Hans Toribio at Gara Art Studio, 240 W 40th St, New York.' : 'Reseñas reales de clientes que confiaron su piel a Hans Toribio en Gara Art Studio, 240 W 40th St, Nueva York.')
+                });
+              }
+            }}
+            className={`text-stone-500 text-xs sm:text-sm font-sans max-w-xl mx-auto leading-relaxed ${
+              isVisualEditMode ? 'cursor-pointer border border-dashed border-amber-400 p-1.5 rounded-lg bg-amber-50/20' : ''
+            }`}
+          >
+            {customTranslations?.[language]?.testimonialsSubtitle || (language === 'en' 
               ? 'Real reviews from clients who entrusted their skin to Hans Toribio at Gara Art Studio, 240 W 40th St, New York.'
-              : 'Reseñas reales de clientes que confiaron su piel a Hans Toribio en Gara Art Studio, 240 W 40th St, Nueva York.'}
+              : 'Reseñas reales de clientes que confiaron su piel a Hans Toribio en Gara Art Studio, 240 W 40th St, Nueva York.')}
           </p>
         </div>
 

@@ -99,10 +99,20 @@ export default function Hero({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.25 }}
-              className="text-xs sm:text-sm font-black tracking-[0.25em] text-[#1A1A1A]/40 uppercase"
+              onClick={() => {
+                if (isVisualEditMode && onEditElement) {
+                  onEditElement('text', 'brandSubtitle', 'Hero Tagline', {
+                    en: customTranslations?.en?.brandSubtitle || 'FINE LINE • MICROREALISM • ANIME',
+                    es: customTranslations?.es?.brandSubtitle || 'LÍNEA FINA • MICRORREALISMO • ANIME'
+                  });
+                }
+              }}
+              className={`text-xs sm:text-sm font-black tracking-[0.25em] text-[#1A1A1A]/40 uppercase inline-block ${
+                isVisualEditMode ? 'cursor-pointer hover:underline text-amber-600' : ''
+              }`}
               id="hero-styles-tagline"
             >
-              {language === 'en' ? 'FINE LINE • MICROREALISM • ANIME' : 'LÍNEA FINA • MICRORREALISMO • ANIME'}
+              {customTranslations?.[language]?.brandSubtitle || (language === 'en' ? 'FINE LINE • MICROREALISM • ANIME' : 'LÍNEA FINA • MICRORREALISMO • ANIME')}
             </motion.p>
           </div>
 

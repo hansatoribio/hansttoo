@@ -6,10 +6,12 @@ import { translations } from '../translations';
 import { 
   Search, Trash2, Download, Check, FileText, RefreshCw, Eye, X, AlertCircle,
   Settings, Globe, Code, Sparkles, Save, Instagram, Phone, Mail, Cloud, Database, Activity, CheckCircle2, TrendingUp, PieChart as PieChartIcon, BarChart2,
-  MessageSquare, ArrowUpRight, History, Feather, Flame, Compass, PenTool, Image as ImageIcon, Plus, Upload, Edit3, FolderPlus, Layers, LayoutGrid, Camera, LogOut
+  MessageSquare, ArrowUpRight, History, Feather, Flame, Compass, PenTool, Image as ImageIcon, Plus, Upload, Edit3, FolderPlus, Layers, LayoutGrid, Camera, LogOut,
+  Clock, MapPin, Video, Play
 } from 'lucide-react';
 import { syncInquiryToGoogleSheets, googleSignIn, googleSignOut, getAccessToken, auth } from '../lib/workspace';
 import { initTracking } from '../lib/tracking';
+import { isVideoUrl, getGoogleDriveEmbedUrl } from '../lib/media';
 import {
   ResponsiveContainer,
   BarChart,
@@ -90,7 +92,8 @@ export default function Dashboard({
   setPortfolioItems,
   customTranslations,
   setCustomTranslations,
-  onEditElement
+  onEditElement,
+  onLogout
 }: DashboardProps) {
   const t = translations[language];
   const [adminTab, setAdminTab] = useState<'inquiries' | 'media' | 'settings'>('inquiries');
@@ -1841,7 +1844,7 @@ export default function Dashboard({
               </div>
             </div>
 
-            {/* Section 2: Artist Bio Photo */}
+            {/* Section 2: Artist Bio Photo & Video */}
             <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-100 shadow-sm space-y-6">
               <div className="flex items-center space-x-3 pb-4 border-b border-stone-100">
                 <div className="p-2.5 rounded-2xl bg-blue-50 text-blue-700 border border-blue-100">
@@ -1849,86 +1852,367 @@ export default function Dashboard({
                 </div>
                 <div>
                   <h4 className="text-sm font-black tracking-wider uppercase text-stone-900">
-                    {language === 'en' ? 'Artist Profile Picture (Hans Toribio)' : 'Foto de Perfil del Artista (Hans Toribio)'}
+                    {language === 'en' ? 'Artist Bio Media (Photo or Video)' : 'Foto o Video de Biografía del Artista (Hans Toribio)'}
                   </h4>
                   <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">
-                    {language === 'en' ? 'The portrait shown in the "About Hans" section' : 'La fotografía que se muestra en la sección "Sobre el Artista"'}
+                    {language === 'en' ? 'Portrait photo or looping video shown in the "About Hans" section' : 'Fotografía de retrato o video en bucle en la sección "Sobre el Artista"'}
                   </p>
                 </div>
               </div>
 
-              <div className="flex flex-col md:flex-row items-center gap-6">
-                <div className="w-36 h-44 bg-stone-900 rounded-2xl overflow-hidden border border-stone-200 relative shrink-0 shadow-md">
-                  <img
-                    src={customTranslations?.artistPhoto || localStorage.getItem('hans_custom_artist_photo') || "/imagenes/IMG_1453.JPG.jpeg"}
-                    alt="Artist Hans"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+              {(() => {
+                const bioUrl = customTranslations?.artistPhoto || localStorage.getItem('hans_custom_artist_photo') || "/imagenes/IMG_1453.JPG.jpeg";
+                const bioMediaType = customTranslations?.artistMediaType || localStorage.getItem('hans_custom_artist_media_type') || (isVideoUrl(bioUrl) ? 'video' : 'image');
+                const isBioVideo = bioMediaType === 'video' || isVideoUrl(bioUrl);
+                const driveEmbed = getGoogleDriveEmbedUrl(bioUrl);
 
-                <div className="flex-1 space-y-4">
-                  <div>
-                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">
-                      {language === 'en' ? 'Image File Path / Base64 URL' : 'Ruta o URL de la Foto del Artista'}
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={customTranslations?.artistPhoto || localStorage.getItem('hans_custom_artist_photo') || "/imagenes/IMG_1453.JPG.jpeg"}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (setCustomTranslations) {
-                            setCustomTranslations((prev: any) => ({ ...prev, artistPhoto: val }));
-                          }
-                          localStorage.setItem('hans_custom_artist_photo', val);
-                        }}
-                        className="flex-1 px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-mono font-medium text-stone-800 focus:outline-none focus:border-stone-400"
-                      />
+                return (
+                  <div className="flex flex-col md:flex-row items-center gap-6">
+                    <div className="w-36 h-48 bg-stone-900 rounded-2xl overflow-hidden border border-stone-200 relative shrink-0 shadow-md flex items-center justify-center">
+                      {isBioVideo ? (
+                        driveEmbed ? (
+                          <iframe
+                            src={driveEmbed}
+                            className="w-full h-full object-cover pointer-events-none border-0"
+                            title="Bio Video Preview"
+                          />
+                        ) : (
+                          <video
+                            src={bioUrl}
+                            className="w-full h-full object-cover"
+                            muted
+                            loop
+                            autoPlay
+                            playsInline
+                          />
+                        )
+                      ) : (
+                        <img
+                          src={bioUrl}
+                          alt="Artist Hans"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/imagenes/IMG_1453.JPG.jpeg";
+                          }}
+                        />
+                      )}
+                      {isBioVideo && (
+                        <div className="absolute top-2 right-2 bg-black/60 text-white p-1 rounded-full">
+                          <Play className="w-3 h-3 fill-current" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex-1 space-y-4 w-full">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">
+                            {language === 'en' ? 'Media Type' : 'Tipo de Contenido'}
+                          </label>
+                          <select
+                            value={bioMediaType}
+                            onChange={(e) => {
+                              const val = e.target.value as 'image' | 'video';
+                              if (setCustomTranslations) {
+                                setCustomTranslations((prev: any) => ({ ...prev, artistMediaType: val }));
+                              }
+                              localStorage.setItem('hans_custom_artist_media_type', val);
+                            }}
+                            className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold text-stone-800 focus:outline-none focus:border-stone-400"
+                          >
+                            <option value="image">🖼️ {language === 'en' ? 'Photo / Image' : 'Foto / Imagen'}</option>
+                            <option value="video">🎥 {language === 'en' ? 'Video (MP4 / WebM / Drive)' : 'Video (MP4 / WebM / Drive)'}</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">
+                            {language === 'en' ? 'Media URL or Path' : 'Ruta o URL del Archivo'}
+                          </label>
+                          <input
+                            type="text"
+                            value={bioUrl}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const isVid = isVideoUrl(val);
+                              if (setCustomTranslations) {
+                                setCustomTranslations((prev: any) => ({ 
+                                  ...prev, 
+                                  artistPhoto: val,
+                                  artistMediaType: isVid ? 'video' : prev?.artistMediaType || 'image'
+                                }));
+                              }
+                              localStorage.setItem('hans_custom_artist_photo', val);
+                              if (isVid) localStorage.setItem('hans_custom_artist_media_type', 'video');
+                            }}
+                            placeholder="/imagenes/... or https://..."
+                            className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-mono text-stone-800 focus:outline-none focus:border-stone-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3">
+                        <label className="px-5 py-2.5 bg-stone-900 hover:bg-black text-white text-xs font-black uppercase tracking-wider rounded-full flex items-center gap-2 cursor-pointer transition-all shadow-md">
+                          <Upload className="w-3.5 h-3.5 text-amber-400" />
+                          <span>{language === 'en' ? 'Upload Photo or Video' : 'Subir Foto o Video desde tu Dispositivo'}</span>
+                          <input
+                            type="file"
+                            accept="image/*,video/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const isVid = file.type.startsWith('video/');
+                              const reader = new FileReader();
+                              reader.onload = (evt) => {
+                                const res = evt.target?.result as string;
+                                if (res) {
+                                  if (setCustomTranslations) {
+                                    setCustomTranslations((prev: any) => ({ 
+                                      ...prev, 
+                                      artistPhoto: res,
+                                      artistMediaType: isVid ? 'video' : 'image'
+                                    }));
+                                  }
+                                  localStorage.setItem('hans_custom_artist_photo', res);
+                                  localStorage.setItem('hans_custom_artist_media_type', isVid ? 'video' : 'image');
+                                  showToast(
+                                    language === 'en' 
+                                      ? (isVid ? 'Artist video uploaded!' : 'Artist photo updated!') 
+                                      : (isVid ? '¡Video del artista subido con éxito!' : '¡Foto del artista actualizada!'), 
+                                    'success'
+                                  );
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            }}
+                          />
+                        </label>
+
+                        <button
+                          onClick={() => {
+                            const defaultPath = "/imagenes/IMG_1453.JPG.jpeg";
+                            if (setCustomTranslations) {
+                              setCustomTranslations((prev: any) => ({ 
+                                ...prev, 
+                                artistPhoto: defaultPath,
+                                artistMediaType: 'image'
+                              }));
+                            }
+                            localStorage.setItem('hans_custom_artist_photo', defaultPath);
+                            localStorage.setItem('hans_custom_artist_media_type', 'image');
+                            showToast(language === 'en' ? 'Restored default photo' : 'Restablecida la foto original por defecto', 'info');
+                          }}
+                          className="px-4 py-2.5 border border-stone-200 hover:border-stone-400 text-stone-600 hover:text-black text-xs font-bold uppercase tracking-wider rounded-full transition-all cursor-pointer"
+                        >
+                          {language === 'en' ? 'Reset to Default' : 'Restablecer Foto Original'}
+                        </button>
+                      </div>
                     </div>
                   </div>
+                );
+              })()}
+            </div>
 
-                  <div className="flex flex-wrap items-center gap-3">
-                    <label className="px-5 py-2.5 bg-stone-900 hover:bg-black text-white text-xs font-black uppercase tracking-wider rounded-full flex items-center gap-2 cursor-pointer transition-all shadow-md">
-                      <Upload className="w-3.5 h-3.5 text-amber-400" />
-                      <span>{language === 'en' ? 'Upload New Photo' : 'Subir Nueva Foto desde tu Dispositivo'}</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = (evt) => {
-                            const res = evt.target?.result as string;
-                            if (res) {
-                              if (setCustomTranslations) {
-                                setCustomTranslations((prev: any) => ({ ...prev, artistPhoto: res }));
-                              }
-                              localStorage.setItem('hans_custom_artist_photo', res);
-                              showToast(language === 'en' ? 'Artist photo updated!' : '¡Foto del artista actualizada!', 'success');
-                            }
-                          };
-                          reader.readAsDataURL(file);
-                        }}
-                      />
-                    </label>
+            {/* Section 2.5: Specialization Pillars (3 Info Cards) & Biography Text */}
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-100 shadow-sm space-y-6">
+              <div className="flex items-center space-x-3 pb-4 border-b border-stone-100">
+                <div className="p-2.5 rounded-2xl bg-amber-50 text-amber-700 border border-amber-100">
+                  <PenTool className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black tracking-wider uppercase text-stone-900">
+                    {language === 'en' ? 'Artist Biography & 3 Specialization Info Cards' : 'Biografía y 3 Cuadros de Especialización Artística'}
+                  </h4>
+                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">
+                    {language === 'en' ? 'Edit paragraphs and the 3 cards below the photo in About section' : 'Edita los párrafos y los 3 cuadros de especialización de la sección Sobre el Artista'}
+                  </p>
+                </div>
+              </div>
 
-                    <button
-                      onClick={() => {
-                        const defaultPath = "/imagenes/IMG_1453.JPG.jpeg";
+              {/* Bio Paragraphs */}
+              <div className="space-y-4">
+                <h5 className="text-xs font-black uppercase tracking-wider text-stone-700">
+                  {language === 'en' ? 'Bio Paragraph 1' : 'Párrafo de Biografía 1'}
+                </h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">English</label>
+                    <textarea
+                      rows={3}
+                      value={customTranslations?.en?.aboutBioP1 || translations.en.aboutBioP1}
+                      onChange={(e) => {
+                        const val = e.target.value;
                         if (setCustomTranslations) {
-                          setCustomTranslations((prev: any) => ({ ...prev, artistPhoto: defaultPath }));
+                          setCustomTranslations((prev: any) => ({
+                            ...prev,
+                            en: { ...(prev?.en || translations.en), aboutBioP1: val }
+                          }));
                         }
-                        localStorage.setItem('hans_custom_artist_photo', defaultPath);
-                        showToast(language === 'en' ? 'Restored default photo' : 'Restablecida la foto original por defecto', 'info');
                       }}
-                      className="px-4 py-2.5 border border-stone-200 hover:border-stone-400 text-stone-600 hover:text-black text-xs font-bold uppercase tracking-wider rounded-full transition-all cursor-pointer"
-                    >
-                      {language === 'en' ? 'Reset to Default' : 'Restablecer Foto Original'}
-                    </button>
+                      className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs text-stone-800 focus:bg-white focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Español</label>
+                    <textarea
+                      rows={3}
+                      value={customTranslations?.es?.aboutBioP1 || translations.es.aboutBioP1}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (setCustomTranslations) {
+                          setCustomTranslations((prev: any) => ({
+                            ...prev,
+                            es: { ...(prev?.es || translations.es), aboutBioP1: val }
+                          }));
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs text-stone-800 focus:bg-white focus:outline-none"
+                    />
                   </div>
                 </div>
+
+                <h5 className="text-xs font-black uppercase tracking-wider text-stone-700 pt-2">
+                  {language === 'en' ? 'Bio Paragraph 2' : 'Párrafo de Biografía 2'}
+                </h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">English</label>
+                    <textarea
+                      rows={3}
+                      value={customTranslations?.en?.aboutBioP2 || translations.en.aboutBioP2}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (setCustomTranslations) {
+                          setCustomTranslations((prev: any) => ({
+                            ...prev,
+                            en: { ...(prev?.en || translations.en), aboutBioP2: val }
+                          }));
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs text-stone-800 focus:bg-white focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Español</label>
+                    <textarea
+                      rows={3}
+                      value={customTranslations?.es?.aboutBioP2 || translations.es.aboutBioP2}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (setCustomTranslations) {
+                          setCustomTranslations((prev: any) => ({
+                            ...prev,
+                            es: { ...(prev?.es || translations.es), aboutBioP2: val }
+                          }));
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs text-stone-800 focus:bg-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 3 Specialization Info Cards */}
+              <div className="space-y-4 pt-4 border-t border-stone-150">
+                <h5 className="text-xs font-black uppercase tracking-wider text-[#E53E3E]">
+                  {language === 'en' ? '3 Artistic Specialization Info Cards' : 'Los 3 Cuadros de Especialidad'}
+                </h5>
+
+                {[1, 2, 3].map((num) => {
+                  const titleKey = `aboutPillar${num}Title`;
+                  const descKey = `aboutPillar${num}Desc`;
+                  return (
+                    <div key={num} className="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-3">
+                      <div className="font-bold text-xs text-stone-900 uppercase">
+                        {language === 'en' ? `Info Card #${num}` : `Cuadro de Información #${num}`}
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[9px] font-bold text-stone-400 uppercase block mb-1">Title (English)</label>
+                          <input
+                            type="text"
+                            value={customTranslations?.en?.[titleKey] || (translations.en as any)[titleKey]}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (setCustomTranslations) {
+                                setCustomTranslations((prev: any) => ({
+                                  ...prev,
+                                  en: { ...(prev?.en || translations.en), [titleKey]: val }
+                                }));
+                              }
+                            }}
+                            className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-xs font-bold"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-bold text-stone-400 uppercase block mb-1">Título (Español)</label>
+                          <input
+                            type="text"
+                            value={customTranslations?.es?.[titleKey] || (translations.es as any)[titleKey]}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (setCustomTranslations) {
+                                setCustomTranslations((prev: any) => ({
+                                  ...prev,
+                                  es: { ...(prev?.es || translations.es), [titleKey]: val }
+                                }));
+                              }
+                            }}
+                            className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-xs font-bold"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[9px] font-bold text-stone-400 uppercase block mb-1">Description (English)</label>
+                          <textarea
+                            rows={2}
+                            value={customTranslations?.en?.[descKey] || (translations.en as any)[descKey]}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (setCustomTranslations) {
+                                setCustomTranslations((prev: any) => ({
+                                  ...prev,
+                                  en: { ...(prev?.en || translations.en), [descKey]: val }
+                                }));
+                              }
+                            }}
+                            className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-bold text-stone-400 uppercase block mb-1">Descripción (Español)</label>
+                          <textarea
+                            rows={2}
+                            value={customTranslations?.es?.[descKey] || (translations.es as any)[descKey]}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (setCustomTranslations) {
+                                setCustomTranslations((prev: any) => ({
+                                  ...prev,
+                                  es: { ...(prev?.es || translations.es), [descKey]: val }
+                                }));
+                              }
+                            }}
+                            className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <button
+                  onClick={() => {
+                    showToast(language === 'en' ? 'Biography and info cards saved!' : '¡Biografía y cuadros guardados con éxito!', 'success');
+                  }}
+                  className="px-6 py-2.5 bg-stone-900 hover:bg-black text-white text-xs font-black uppercase tracking-wider rounded-full flex items-center gap-2 cursor-pointer shadow-md"
+                >
+                  <Save className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{language === 'en' ? 'Save Bio & Info Cards' : 'Guardar Cambios de Biografía y Cuadros'}</span>
+                </button>
               </div>
             </div>
 
@@ -2203,6 +2487,174 @@ export default function Dashboard({
                     ? 'Tracks google campaign inquiries and triggers the "generate_lead" tag.' 
                     : 'Sigue tus anuncios de Google y dispara la etiqueta "generate_lead" al agendar.'}
                 </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Studio Location & Schedule Settings Card */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-100 shadow-sm space-y-6" id="studio-schedule-settings-card">
+            <div className="flex items-center space-x-3 pb-4 border-b border-stone-100">
+              <div className="p-2.5 rounded-2xl bg-amber-50 text-amber-700 border border-amber-100">
+                <Clock className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black tracking-wider uppercase text-stone-900">
+                  {language === 'en' ? 'Studio Location & Live Schedule' : 'Horarios de Atención y Ubicación del Estudio'}
+                </h3>
+                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">
+                  {language === 'en' ? 'Configure opening hours, live status calculation, and studio address' : 'Configura horas de apertura, cálculo de estado en vivo y dirección del estudio'}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-1">
+                    {language === 'en' ? 'Opening Hour (New York Time)' : 'Hora de Apertura (Hora NY)'}
+                  </label>
+                  <select
+                    value={Number(customTranslations?.mapOpenHour ?? 11)}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      if (setCustomTranslations) {
+                        setCustomTranslations((prev: any) => ({ ...prev, mapOpenHour: val }));
+                      }
+                      localStorage.setItem('hans_map_open_hour', val.toString());
+                    }}
+                    className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold text-stone-800"
+                  >
+                    {[8, 9, 10, 11, 12, 13, 14].map((h) => (
+                      <option key={h} value={h}>{h}:00 AM</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-1">
+                    {language === 'en' ? 'Closing Hour (New York Time)' : 'Hora de Cierre (Hora NY)'}
+                  </label>
+                  <select
+                    value={Number(customTranslations?.mapCloseHour ?? 17)}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      if (setCustomTranslations) {
+                        setCustomTranslations((prev: any) => ({ ...prev, mapCloseHour: val }));
+                      }
+                      localStorage.setItem('hans_map_close_hour', val.toString());
+                    }}
+                    className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold text-stone-800"
+                  >
+                    {[16, 17, 18, 19, 20, 21, 22].map((h) => (
+                      <option key={h} value={h}>{h - 12}:00 PM ({h}:00)</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-1">
+                    {language === 'en' ? 'Weekly Schedule Display (English)' : 'Texto de Horario Semanal (Inglés)'}
+                  </label>
+                  <input
+                    type="text"
+                    value={customTranslations?.en?.mapScheduleText || customTranslations?.mapScheduleText || '11:00 AM - 5:00 PM'}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (setCustomTranslations) {
+                        setCustomTranslations((prev: any) => ({
+                          ...prev,
+                          mapScheduleText: val,
+                          en: { ...(prev?.en || translations.en), mapScheduleText: val }
+                        }));
+                      }
+                    }}
+                    className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-1">
+                    {language === 'en' ? 'Weekly Schedule Display (Spanish)' : 'Texto de Horario Semanal (Español)'}
+                  </label>
+                  <input
+                    type="text"
+                    value={customTranslations?.es?.mapScheduleText || customTranslations?.mapScheduleText || '11:00 AM - 5:00 PM'}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (setCustomTranslations) {
+                        setCustomTranslations((prev: any) => ({
+                          ...prev,
+                          mapScheduleText: val,
+                          es: { ...(prev?.es || translations.es), mapScheduleText: val }
+                        }));
+                      }
+                    }}
+                    className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-1">
+                  {language === 'en' ? 'Studio Address Line 1' : 'Dirección del Estudio Línea 1'}
+                </label>
+                <input
+                  type="text"
+                  value={customTranslations?.en?.mapAddressLine1 || customTranslations?.mapAddressLine1 || 'Gara Art Studio • 240 W 40th St'}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (setCustomTranslations) {
+                      setCustomTranslations((prev: any) => ({
+                        ...prev,
+                        mapAddressLine1: val,
+                        en: { ...(prev?.en || translations.en), mapAddressLine1: val },
+                        es: { ...(prev?.es || translations.es), mapAddressLine1: val }
+                      }));
+                    }
+                  }}
+                  className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-1">
+                  {language === 'en' ? 'Studio Address Line 2 (City, Zip, Country)' : 'Dirección Línea 2 (Ciudad, Código Postal, País)'}
+                </label>
+                <input
+                  type="text"
+                  value={customTranslations?.en?.mapAddressLine2 || customTranslations?.mapAddressLine2 || 'Manhattan, NY 10018, United States'}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (setCustomTranslations) {
+                      setCustomTranslations((prev: any) => ({
+                        ...prev,
+                        mapAddressLine2: val,
+                        en: { ...(prev?.en || translations.en), mapAddressLine2: val },
+                        es: { ...(prev?.es || translations.es), mapAddressLine2: val }
+                      }));
+                    }
+                  }}
+                  className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-1">
+                  {language === 'en' ? 'Google Maps Share URL' : 'Enlace de Google Maps para Direcciones'}
+                </label>
+                <input
+                  type="text"
+                  value={customTranslations?.mapGoogleMapsUrl || "https://maps.app.goo.gl/VNY6iiixsNeAKxUDA"}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (setCustomTranslations) {
+                      setCustomTranslations((prev: any) => ({ ...prev, mapGoogleMapsUrl: val }));
+                    }
+                  }}
+                  className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-mono"
+                />
               </div>
             </div>
           </div>
