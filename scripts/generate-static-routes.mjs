@@ -67,6 +67,30 @@ const routes = [
     alternateLocale: 'en_US',
     robots: 'noindex, nofollow',
   },
+  {
+    path: 'admin',
+    lang: 'en',
+    title: 'Admin | Hans | NYC Tattoo Artist',
+    description: 'Private administration area for Hansttoo consultation requests.',
+    canonical: 'https://hansttoo.vercel.app/admin',
+    alternateEn: 'https://hansttoo.vercel.app/admin',
+    alternateEs: 'https://hansttoo.vercel.app/es/admin',
+    locale: 'en_US',
+    alternateLocale: 'es_US',
+    robots: 'noindex, nofollow',
+  },
+  {
+    path: 'es/admin',
+    lang: 'es',
+    title: 'Administración | Hans | Tatuador en NYC',
+    description: 'Área privada para administrar solicitudes de consulta de Hansttoo.',
+    canonical: 'https://hansttoo.vercel.app/es/admin',
+    alternateEn: 'https://hansttoo.vercel.app/admin',
+    alternateEs: 'https://hansttoo.vercel.app/es/admin',
+    locale: 'es_US',
+    alternateLocale: 'en_US',
+    robots: 'noindex, nofollow',
+  },
 ];
 
 function escapeAttribute(value) {

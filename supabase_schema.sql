@@ -39,19 +39,40 @@ create table if not exists public.inquiries (
 alter table public.inquiries enable row level security;
 alter table public.inquiries alter column email drop not null;
 
+-- A user must first exist in Supabase Auth and then be added here by the
+-- project owner. The browser cannot add or promote administrators.
+create table if not exists public.admin_users (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+alter table public.admin_users enable row level security;
+revoke all on table public.admin_users from anon, authenticated;
+grant select on table public.admin_users to authenticated;
+
+drop policy if exists admin_users_read_self on public.admin_users;
+create policy admin_users_read_self
+on public.admin_users
+for select
+to authenticated
+using (user_id = (select auth.uid()));
+
 drop policy if exists inquiries_select_all on public.inquiries;
 drop policy if exists inquiries_insert_all on public.inquiries;
 drop policy if exists inquiries_update_all on public.inquiries;
 drop policy if exists inquiries_delete_all on public.inquiries;
 drop policy if exists public_create_pending_inquiry on public.inquiries;
+drop policy if exists admin_read_inquiries on public.inquiries;
+drop policy if exists admin_update_inquiries on public.inquiries;
 
 revoke all on table public.inquiries from anon, authenticated;
-grant insert on table public.inquiries to anon;
+grant insert on table public.inquiries to anon, authenticated;
+grant select, update on table public.inquiries to authenticated;
 
 create policy public_create_pending_inquiry
 on public.inquiries
 for insert
-to anon
+to anon, authenticated
 with check (
   status = 'pending'
   and artist_notes is null
@@ -60,6 +81,34 @@ with check (
   and char_length(full_name) between 1 and 120
   and char_length(description) between 15 and 5000
   and cardinality(reference_images) <= 5
+);
+
+create policy admin_read_inquiries
+on public.inquiries
+for select
+to authenticated
+using (
+  exists (
+    select 1 from public.admin_users
+    where user_id = (select auth.uid())
+  )
+);
+
+create policy admin_update_inquiries
+on public.inquiries
+for update
+to authenticated
+using (
+  exists (
+    select 1 from public.admin_users
+    where user_id = (select auth.uid())
+  )
+)
+with check (
+  exists (
+    select 1 from public.admin_users
+    where user_id = (select auth.uid())
+  )
 );
 
 -- Disable the legacy browser-readable admin/settings paths when those tables exist.
@@ -98,16 +147,30 @@ on conflict (id) do update set
 drop policy if exists storage_upload_public on storage.objects;
 drop policy if exists storage_select_public on storage.objects;
 drop policy if exists public_upload_inquiry_reference on storage.objects;
+drop policy if exists admin_read_inquiry_references on storage.objects;
 
 create policy public_upload_inquiry_reference
 on storage.objects
 for insert
-to anon
+to anon, authenticated
 with check (
   bucket_id = 'inquiry-images'
   and (storage.foldername(name))[1] = 'uploads'
 );
 
+create policy admin_read_inquiry_references
+on storage.objects
+for select
+to authenticated
+using (
+  bucket_id = 'inquiry-images'
+  and exists (
+    select 1 from public.admin_users
+    where user_id = (select auth.uid())
+  )
+);
+
 -- No anonymous SELECT policy is created: reference images remain private.
--- Review leads and files through the authenticated Supabase Dashboard, or add a
--- separately authenticated server-side admin workflow before restoring an admin UI.
+-- The /admin route uses Supabase Auth plus these RLS policies. Create the Auth
+-- user through the official Supabase interface, then add its UUID to
+-- public.admin_users. Never put a service-role key in the website.

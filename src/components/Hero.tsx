@@ -36,7 +36,7 @@ export default function Hero({ language, onNavigate }: HeroProps) {
   return (
     <section id="home" className="relative overflow-hidden border-b border-stone-200 bg-[#FCFBFA]">
       <div className="pointer-events-none absolute inset-0 tattoo-grid-bg opacity-45" />
-      <div className="relative mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_0.72fr] lg:py-20">
+      <div className="relative mx-auto grid max-w-7xl items-start gap-10 px-4 py-10 sm:min-h-[calc(100svh-4rem)] sm:items-center sm:px-6 sm:py-16 lg:grid-cols-[1fr_0.72fr] lg:py-20">
         <div className="max-w-4xl">
           <p className="text-[11px] font-black tracking-[0.28em] text-[#C9362B] sm:text-xs">{t.eyebrow}</p>
           <h1 className="mt-5 text-[clamp(3rem,8vw,6.8rem)] font-black leading-[0.9] tracking-[-0.075em] text-stone-950">

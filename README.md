@@ -25,7 +25,25 @@ Copy `.env.example` to `.env.local` and add only the public Supabase project URL
 
 The form fails visibly when Supabase is not configured. It does not pretend a lead was delivered and does not store consultation data in local storage.
 
-The reviewed SQL in `supabase_schema.sql` is not applied automatically. Hans must review and apply it through the official Supabase interface before production use. It limits anonymous users to creating pending inquiries and uploading private reference images. It removes the legacy anonymous read/update/delete policies. Applying it can disable the old browser-based admin dashboard; review leads through the Supabase Dashboard until a separately authenticated admin backend exists.
+The reviewed SQL in `supabase_schema.sql` is not applied automatically. Hans must review and apply it through the official Supabase interface before production use. It limits public visitors to creating pending inquiries and uploading private reference images. It removes all legacy anonymous read/update/delete access.
+
+## Secure admin panel
+
+`/admin` is a private lead-management panel. It uses Supabase Auth plus Row Level Security; the removed visual website editor and its browser-stored passcode are not used.
+
+To activate the panel:
+
+1. Review and run `supabase_schema.sql` in this repository's approved Supabase project.
+2. Create Hans's administrator user through **Supabase Dashboard → Authentication → Users**. Hans should enter or reset the password himself in the official interface.
+3. Copy that user's UUID and add it through the SQL editor:
+
+   ```sql
+   insert into public.admin_users (user_id)
+   values ('AUTH_USER_UUID')
+   on conflict (user_id) do nothing;
+   ```
+
+The frontend uses only the public publishable/anon key. It never needs a `service_role` key. RLS allows the approved administrator to read inquiries, open short-lived links to private reference images, and update status or private artist notes. The panel intentionally does not delete leads or edit the public website.
 
 ## Conversion measurement
 
@@ -33,7 +51,7 @@ See `docs/launch-checklist.md` for the exact Google and Meta identifiers require
 
 ## Deployment
 
-`npm run build` creates the static client in `dist/`. `server.js` serves that directory and falls back to `index.html` for `/privacy` and `/thank-you`. `discloud.config` is the only deployment configuration checked into this repository. No deployment is performed by the build or verification scripts.
+`npm run build` creates the static client in `dist/`, including route-specific HTML for English, Spanish, privacy, thank-you, and admin routes. The production project is deployed from the `main` branch to `https://hansttoo.vercel.app`; builds and verification scripts do not deploy by themselves.
 
 ## Portfolio assets
 

@@ -2,7 +2,7 @@ import type { Language } from '../types';
 
 const SITE_URL = 'https://hansttoo.vercel.app';
 
-type PageKind = 'home' | 'privacy' | 'thank-you';
+type PageKind = 'home' | 'privacy' | 'thank-you' | 'admin';
 
 const metadata: Record<Language, Record<PageKind, { title: string; description: string }>> = {
   en: {
@@ -18,6 +18,10 @@ const metadata: Record<Language, Record<PageKind, { title: string; description: 
       title: 'Consultation Request Received | Hans | NYC Tattoo Artist',
       description: 'Confirmation that your tattoo consultation request was received.',
     },
+    admin: {
+      title: 'Admin | Hans | NYC Tattoo Artist',
+      description: 'Private administration area for Hansttoo consultation requests.',
+    },
   },
   es: {
     home: {
@@ -31,6 +35,10 @@ const metadata: Record<Language, Record<PageKind, { title: string; description: 
     'thank-you': {
       title: 'Solicitud de Consulta Recibida | Hans | Tatuador en NYC',
       description: 'Confirmación de que se recibió tu solicitud de consulta para un tatuaje.',
+    },
+    admin: {
+      title: 'Administración | Hans | Tatuador en NYC',
+      description: 'Área privada para administrar solicitudes de consulta de Hansttoo.',
     },
   },
 };
@@ -54,7 +62,7 @@ export function updatePageMetadata(language: Language, page: PageKind) {
   const canonicalUrl = new URL(canonicalPath, SITE_URL).href;
   const englishUrl = new URL(localizedPath('en', page), SITE_URL).href;
   const spanishUrl = new URL(localizedPath('es', page), SITE_URL).href;
-  const indexable = page !== 'thank-you';
+  const indexable = page !== 'thank-you' && page !== 'admin';
 
   document.title = pageMetadata.title;
   document.documentElement.lang = language;

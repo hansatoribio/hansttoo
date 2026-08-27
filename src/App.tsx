@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { ArrowRight, Instagram, MapPin, MessageCircle, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import AboutArtist from './components/AboutArtist';
 import ConsentBanner from './components/ConsentBanner';
@@ -47,11 +47,14 @@ const copy = {
   },
 };
 
-type PageKind = 'home' | 'privacy' | 'thank-you';
+const AdminPage = lazy(() => import('./components/AdminPage'));
+
+type PageKind = 'home' | 'privacy' | 'thank-you' | 'admin';
 
 function resolveRoute(pathname: string): { language: Language; page: PageKind } {
   const normalized = pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname;
   const language: Language = normalized === '/es' || normalized.startsWith('/es/') ? 'es' : 'en';
+  if (normalized === '/admin' || normalized === '/es/admin') return { language, page: 'admin' };
   if (normalized === '/privacy' || normalized === '/es/privacy') return { language, page: 'privacy' };
   if (normalized === '/thank-you' || normalized === '/es/thank-you') return { language, page: 'thank-you' };
   return { language, page: 'home' };
@@ -122,6 +125,14 @@ export default function App() {
     setPath(thankYouPath);
     window.scrollTo({ top: 0 });
   };
+
+  if (currentPage === 'admin') {
+    return (
+      <Suspense fallback={<main className="flex min-h-screen items-center justify-center bg-[#F3F0EC] text-sm font-bold text-stone-600">Loading secure admin…</main>}>
+        <AdminPage />
+      </Suspense>
+    );
+  }
 
   if (currentPage === 'privacy') {
     return (

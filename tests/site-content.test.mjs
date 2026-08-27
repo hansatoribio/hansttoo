@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const files = [
@@ -66,5 +66,31 @@ test('build prepares route-specific HTML for crawlable language metadata', async
   assert.match(generator, /path: 'es'/);
   assert.match(generator, /path: 'es\/privacy'/);
   assert.match(generator, /path: 'es\/thank-you'/);
+  assert.match(generator, /path: 'admin'/);
+  assert.match(generator, /path: 'es\/admin'/);
   assert.match(generator, /robots: 'noindex, nofollow'/);
+});
+
+test('admin uses Supabase Auth and RLS without the removed visual editor', async () => {
+  const [app, admin, supabaseClient, schema] = await Promise.all([
+    readFile('src/App.tsx', 'utf8'),
+    readFile('src/components/AdminPage.tsx', 'utf8'),
+    readFile('src/lib/supabase.ts', 'utf8'),
+    readFile('supabase_schema.sql', 'utf8'),
+  ]);
+  assert.match(app, /path.*admin|currentPage === 'admin'/s);
+  assert.match(admin, /Panel de consultas/);
+  assert.match(supabaseClient, /signInWithPassword/);
+  assert.match(schema, /create table if not exists public\.admin_users/);
+  assert.match(schema, /admin_read_inquiries/);
+  assert.match(schema, /admin_update_inquiries/);
+  assert.doesNotMatch(supabaseClient, /service_role|admin_passcode|hans2026/);
+  await assert.rejects(access('src/components/VisualElementEditorModal.tsx'));
+  await assert.rejects(access('src/components/Dashboard.tsx'));
+});
+
+test('mobile hero uses content height instead of forcing a full viewport', async () => {
+  const hero = await readFile('src/components/Hero.tsx', 'utf8');
+  assert.match(hero, /sm:min-h-\[calc\(100svh-4rem\)\]/);
+  assert.doesNotMatch(hero, /grid min-h-\[calc\(100svh-4rem\)\]/);
 });
