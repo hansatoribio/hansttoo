@@ -52,6 +52,8 @@ export interface Inquiry {
   preferredContactMethod?: 'email' | 'instagram' | 'phone' | 'whatsapp';
   status: InquiryStatus;
   createdAt: string;
+  viewedAt?: string;
+  tags?: string[];
   artistNotes?: string;
   medicalNotes?: string;
   statusHistory?: { status: InquiryStatus; timestamp: string; note?: string }[];

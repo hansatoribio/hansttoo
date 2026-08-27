@@ -122,6 +122,16 @@ test('admin uses Supabase Auth and RLS without the removed visual editor', async
   assert.match(schema, /create table if not exists public\.admin_users/);
   assert.match(schema, /admin_read_inquiries/);
   assert.match(schema, /admin_update_inquiries/);
+  assert.match(schema, /viewed_at timestamptz/);
+  assert.match(schema, /tags text\[\]/);
+  assert.match(schema, /viewed_at is null/);
+  assert.match(schema, /cardinality\(tags\) = 0/);
+  assert.match(admin, /Nuevos sin abrir/);
+  assert.match(admin, /Ordenar leads/);
+  assert.match(admin, /Etiquetas del lead/);
+  assert.match(admin, /Origen de los leads/);
+  assert.match(supabaseClient, /markInquiryViewedInSupabase/);
+  assert.match(supabaseClient, /updateInquiryTagsInSupabase/);
   assert.doesNotMatch(supabaseClient, /service_role|admin_passcode|hans2026/);
   await assert.rejects(access('src/components/VisualElementEditorModal.tsx'));
   await assert.rejects(access('src/components/Dashboard.tsx'));

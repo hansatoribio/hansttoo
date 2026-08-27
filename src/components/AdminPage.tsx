@@ -2,8 +2,8 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   ArrowLeft,
+  ArrowUpDown,
   BarChart3,
-  CalendarDays,
   CheckCircle2,
   Clock3,
   ExternalLink,
@@ -13,11 +13,15 @@ import {
   Loader2,
   LogOut,
   Mail,
-  MapPin,
   MessageCircle,
+  Megaphone,
+  Percent,
   RefreshCcw,
   Search,
+  Tag,
+  TrendingUp,
   UserRound,
+  Zap,
   X,
 } from 'lucide-react';
 import type { AdminIdentity } from '../lib/supabase';
@@ -26,10 +30,12 @@ import {
   fetchAdminInquiries,
   getAdminIdentity,
   isSupabaseConfigured,
+  markInquiryViewedInSupabase,
   signInAdmin,
   signOutAdmin,
   updateInquiryNotesInSupabase,
   updateInquiryStatusInSupabase,
+  updateInquiryTagsInSupabase,
 } from '../lib/supabase';
 import type { Inquiry, InquiryStatus } from '../types';
 
@@ -49,6 +55,12 @@ const styleLabels: Record<Inquiry['style'], string> = {
   other: 'Otro',
 };
 
+type AttributionChannel = 'google' | 'meta' | 'direct' | 'referral' | 'other';
+type SortOption = 'newest' | 'oldest' | 'name-asc' | 'name-desc' | 'status' | 'source';
+
+const suggestedTags = ['Prioridad', 'Responder', 'Seguimiento', 'Cotización enviada', 'Cliente recurrente'];
+const statusOrder: InquiryStatus[] = ['pending', 'contacted', 'replied', 'booked', 'completed', 'declined'];
+
 function statusMeta(status: InquiryStatus) {
   return statusOptions.find((option) => option.value === status) || statusOptions[0];
 }
@@ -65,10 +77,44 @@ function formatDate(value: string) {
 function attributionLabel(inquiry: Inquiry) {
   const attribution = inquiry.attribution;
   if (!attribution) return 'Origen no registrado';
-  if (attribution.gclid || attribution.gbraid || attribution.wbraid) return 'Google Ads';
-  if (attribution.fbclid) return 'Meta Ads';
-  if (attribution.source === 'direct') return 'Visita directa';
+  const channel = attributionChannel(inquiry);
+  if (channel !== 'other') return sourceOptionLabel(channel);
   return attribution.source || 'Origen no registrado';
+}
+
+function attributionChannel(inquiry: Inquiry): AttributionChannel {
+  const attribution = inquiry.attribution;
+  const source = attribution?.source?.toLowerCase() || '';
+  const medium = attribution?.medium?.toLowerCase() || '';
+  if (attribution?.gclid || attribution?.gbraid || attribution?.wbraid) return 'google';
+  if (attribution?.fbclid) return 'meta';
+  if (source === 'direct') return 'direct';
+  if (medium === 'referral') return 'referral';
+  if (source.includes('google') && ['cpc', 'ppc', 'paid', 'paid_search'].includes(medium)) return 'google';
+  if (['meta', 'facebook', 'instagram'].some((value) => source.includes(value)) && ['cpc', 'paid', 'paid_social'].includes(medium)) return 'meta';
+  return 'other';
+}
+
+function attributionExplanation(inquiry: Inquiry) {
+  const channel = attributionChannel(inquiry);
+  if (channel === 'direct') return 'Abrió la web directamente o desde un enlace sin parámetros de campaña.';
+  if (channel === 'google') return 'Consulta atribuida a Google mediante parámetros UTM o identificador de clic.';
+  if (channel === 'meta') return 'Consulta atribuida a Meta mediante parámetros UTM o identificador de clic.';
+  if (channel === 'referral') return 'Llegó desde un enlace publicado en otro sitio web.';
+  return 'No se recibieron suficientes parámetros para clasificar el origen.';
+}
+
+function sourceOptionLabel(channel: AttributionChannel) {
+  return ({ google: 'Google Ads', meta: 'Meta', direct: 'Visita directa', referral: 'Referencia', other: 'Otro / sin datos' })[channel];
+}
+
+function percentage(value: number, total: number) {
+  return total ? Math.round((value / total) * 100) : 0;
+}
+
+function safeDateValue(value: string) {
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : 0;
 }
 
 function contactLink(inquiry: Inquiry): { href: string; label: string; icon: typeof Mail } | null {
@@ -217,6 +263,8 @@ function LeadDetail({
 }) {
   const [status, setStatus] = useState<InquiryStatus>(inquiry.status);
   const [notes, setNotes] = useState(inquiry.artistNotes || '');
+  const [tags, setTags] = useState<string[]>(inquiry.tags || []);
+  const [customTag, setCustomTag] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
@@ -246,19 +294,35 @@ function LeadDetail({
   const save = async () => {
     setSaving(true);
     setMessage('');
-    const [statusSaved, notesSaved] = await Promise.all([
+    const [statusSaved, notesSaved, tagsSaved] = await Promise.all([
       status === inquiry.status ? Promise.resolve(true) : updateInquiryStatusInSupabase(inquiry.id, status),
       notes.trim() === (inquiry.artistNotes || '').trim()
         ? Promise.resolve(true)
         : updateInquiryNotesInSupabase(inquiry.id, notes),
+      JSON.stringify(tags) === JSON.stringify(inquiry.tags || [])
+        ? Promise.resolve(true)
+        : updateInquiryTagsInSupabase(inquiry.id, tags),
     ]);
-    if (statusSaved && notesSaved) {
-      onUpdated({ ...inquiry, status, artistNotes: notes.trim() });
+    if (statusSaved && notesSaved && tagsSaved) {
+      onUpdated({ ...inquiry, status, artistNotes: notes.trim(), tags });
       setMessage('Cambios guardados.');
     } else {
       setMessage('No se pudieron guardar los cambios. Revisa tu sesión y las políticas de acceso.');
     }
     setSaving(false);
+  };
+
+  const toggleTag = (tag: string) => {
+    setTags((current) => current.includes(tag)
+      ? current.filter((item) => item !== tag)
+      : current.length < 8 ? [...current, tag] : current);
+  };
+
+  const addCustomTag = () => {
+    const normalized = customTag.trim().slice(0, 28);
+    if (!normalized || tags.some((tag) => tag.toLowerCase() === normalized.toLowerCase()) || tags.length >= 8) return;
+    setTags((current) => [...current, normalized]);
+    setCustomTag('');
   };
 
   return (
@@ -267,7 +331,11 @@ function LeadDetail({
         <div className="rounded-[2rem] bg-white p-5 shadow-2xl sm:p-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${statusMeta(inquiry.status).color}`}>{statusMeta(inquiry.status).label}</span>
+              <div className="flex flex-wrap gap-2">
+                <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${statusMeta(inquiry.status).color}`}>{statusMeta(inquiry.status).label}</span>
+                {!inquiry.viewedAt ? <span className="inline-flex rounded-full bg-[#C9362B] px-3 py-1 text-xs font-black text-white">NUEVO</span> : null}
+                {(inquiry.tags || []).map((tag) => <span key={tag} className="inline-flex rounded-full bg-stone-900 px-3 py-1 text-xs font-bold text-white">{tag}</span>)}
+              </div>
               <h2 id="lead-title" className="mt-3 text-3xl font-black tracking-[-0.04em]">{inquiry.fullName}</h2>
               <p className="mt-1 text-sm text-stone-500">{formatDate(inquiry.createdAt)}</p>
             </div>
@@ -305,12 +373,13 @@ function LeadDetail({
                 <BarChart3 className="h-4 w-4 text-stone-500" aria-hidden="true" />
                 <p className="text-xs font-black uppercase tracking-wider text-stone-500">Origen de la consulta</p>
               </div>
+              <p className="mt-2 text-sm leading-6 text-stone-600">{attributionExplanation(inquiry)}</p>
               <div className="mt-3 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
                 <p><span className="block text-xs text-stone-500">Canal</span><span className="font-bold">{attributionLabel(inquiry)}</span></p>
-                <p><span className="block text-xs text-stone-500">Medio</span><span className="font-bold">{inquiry.attribution.medium || 'No indicado'}</span></p>
-                <p><span className="block text-xs text-stone-500">Campaña</span><span className="break-words font-bold">{inquiry.attribution.campaign || 'No indicada'}</span></p>
-                <p><span className="block text-xs text-stone-500">Anuncio / contenido</span><span className="break-words font-bold">{inquiry.attribution.content || 'No indicado'}</span></p>
-                <p><span className="block text-xs text-stone-500">Palabra clave</span><span className="break-words font-bold">{inquiry.attribution.term || 'No indicada'}</span></p>
+                <p><span className="block text-xs text-stone-500">Medio</span><span className="font-bold">{inquiry.attribution.medium === 'none' ? 'Sin campaña' : inquiry.attribution.medium || 'No indicado'}</span></p>
+                <p><span className="block text-xs text-stone-500">Campaña</span><span className="break-words font-bold">{inquiry.attribution.campaign || (attributionChannel(inquiry) === 'direct' ? 'No aplica' : 'No indicada')}</span></p>
+                <p><span className="block text-xs text-stone-500">Anuncio / contenido</span><span className="break-words font-bold">{inquiry.attribution.content || (attributionChannel(inquiry) === 'direct' ? 'No aplica' : 'No indicado')}</span></p>
+                <p><span className="block text-xs text-stone-500">Palabra clave</span><span className="break-words font-bold">{inquiry.attribution.term || (attributionChannel(inquiry) === 'direct' ? 'No aplica' : 'No indicada')}</span></p>
                 <p><span className="block text-xs text-stone-500">Página de entrada</span><span className="break-words font-bold">{inquiry.attribution.landingPath}</span></p>
                 {(inquiry.attribution.gclid || inquiry.attribution.gbraid || inquiry.attribution.wbraid || inquiry.attribution.fbclid) ? (
                   <p className="sm:col-span-2"><span className="block text-xs text-stone-500">Identificador publicitario</span><span className="font-bold">Capturado para atribución; valor oculto en el panel.</span></p>
@@ -347,6 +416,28 @@ function LeadDetail({
             </label>
           </div>
 
+          <fieldset className="mt-6 rounded-2xl border border-stone-200 p-4">
+            <legend className="px-2 text-sm font-black">Etiquetas del lead</legend>
+            <p className="text-xs leading-5 text-stone-500">Úsalas para priorizar y organizar el seguimiento. Máximo 8.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {suggestedTags.map((tag) => (
+                <button key={tag} type="button" onClick={() => toggleTag(tag)} aria-pressed={tags.includes(tag)} className={`rounded-full border px-3 py-2 text-xs font-bold ${tags.includes(tag) ? 'border-stone-950 bg-stone-950 text-white' : 'border-stone-300 bg-white text-stone-700 hover:border-stone-950'}`}>
+                  {tag}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 flex gap-2">
+              <label className="sr-only" htmlFor="custom-lead-tag">Etiqueta personalizada</label>
+              <input id="custom-lead-tag" value={customTag} maxLength={28} onChange={(event) => setCustomTag(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addCustomTag(); } }} placeholder="Etiqueta personalizada" className="min-h-11 min-w-0 flex-1 rounded-2xl border border-stone-300 px-4 text-sm" />
+              <button type="button" onClick={addCustomTag} disabled={!customTag.trim() || tags.length >= 8} className="min-h-11 rounded-full border border-stone-300 px-4 text-sm font-black disabled:opacity-40">Añadir</button>
+            </div>
+            {tags.filter((tag) => !suggestedTags.includes(tag)).length ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {tags.filter((tag) => !suggestedTags.includes(tag)).map((tag) => <button key={tag} type="button" onClick={() => toggleTag(tag)} className="rounded-full bg-stone-100 px-3 py-2 text-xs font-bold text-stone-700" aria-label={`Quitar etiqueta ${tag}`}>{tag} ×</button>)}
+              </div>
+            ) : null}
+          </fieldset>
+
           {message ? <p role="status" className="mt-4 text-sm font-bold text-stone-700">{message}</p> : null}
           <button onClick={save} disabled={saving} className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-stone-950 px-5 text-sm font-black text-white hover:bg-[#C9362B] disabled:opacity-50">
             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> : <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" />}
@@ -365,6 +456,10 @@ function AdminDashboard({ identity, onSignedOut }: { identity: AdminIdentity; on
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | InquiryStatus>('all');
+  const [sourceFilter, setSourceFilter] = useState<'all' | AttributionChannel>('all');
+  const [tagFilter, setTagFilter] = useState('all');
+  const [newOnly, setNewOnly] = useState(false);
+  const [sort, setSort] = useState<SortOption>('newest');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -379,16 +474,50 @@ function AdminDashboard({ identity, onSignedOut }: { identity: AdminIdentity; on
     void load();
   }, [load]);
 
+  const allTags = useMemo(() => [...new Set<string>(inquiries.flatMap((inquiry) => inquiry.tags || []))].sort((a, b) => a.localeCompare(b, 'es')), [inquiries]);
+
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return inquiries.filter((inquiry) => {
+    const filtered = inquiries.filter((inquiry) => {
       if (filter !== 'all' && inquiry.status !== filter) return false;
+      if (sourceFilter !== 'all' && attributionChannel(inquiry) !== sourceFilter) return false;
+      if (tagFilter !== 'all' && !(inquiry.tags || []).includes(tagFilter)) return false;
+      if (newOnly && inquiry.viewedAt) return false;
       if (!query) return true;
-      return [inquiry.fullName, inquiry.email, inquiry.phone, inquiry.instagram, inquiry.placement, inquiry.description, inquiry.attribution?.source, inquiry.attribution?.campaign, inquiry.attribution?.term]
+      return [inquiry.fullName, inquiry.email, inquiry.phone, inquiry.instagram, inquiry.placement, inquiry.description, inquiry.attribution?.source, inquiry.attribution?.campaign, inquiry.attribution?.term, ...(inquiry.tags || [])]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(query));
     });
-  }, [filter, inquiries, search]);
+    return [...filtered].sort((first, second) => {
+      if (sort === 'oldest') return safeDateValue(first.createdAt) - safeDateValue(second.createdAt);
+      if (sort === 'name-asc') return first.fullName.localeCompare(second.fullName, 'es', { sensitivity: 'base' });
+      if (sort === 'name-desc') return second.fullName.localeCompare(first.fullName, 'es', { sensitivity: 'base' });
+      if (sort === 'status') return statusOrder.indexOf(first.status) - statusOrder.indexOf(second.status) || safeDateValue(second.createdAt) - safeDateValue(first.createdAt);
+      if (sort === 'source') return attributionLabel(first).localeCompare(attributionLabel(second), 'es') || safeDateValue(second.createdAt) - safeDateValue(first.createdAt);
+      return safeDateValue(second.createdAt) - safeDateValue(first.createdAt);
+    });
+  }, [filter, inquiries, newOnly, search, sort, sourceFilter, tagFilter]);
+
+  const stats = useMemo(() => {
+    const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    const channelCounts = inquiries.reduce<Record<AttributionChannel, number>>((counts, inquiry) => {
+      const channel = attributionChannel(inquiry);
+      counts[channel] += 1;
+      return counts;
+    }, { google: 0, meta: 0, direct: 0, referral: 0, other: 0 });
+    const styleCounts = inquiries.reduce<Record<string, number>>((counts, inquiry) => {
+      counts[inquiry.style] = (counts[inquiry.style] || 0) + 1;
+      return counts;
+    }, {});
+    return {
+      newCount: inquiries.filter((item) => !item.viewedAt).length,
+      recentCount: inquiries.filter((item) => safeDateValue(item.createdAt) >= sevenDaysAgo).length,
+      pendingCount: inquiries.filter((item) => item.status === 'pending').length,
+      bookedCount: inquiries.filter((item) => item.status === 'booked' || item.status === 'completed').length,
+      channelCounts,
+      styleCounts,
+    };
+  }, [inquiries]);
 
   const logout = async () => {
     await signOutAdmin();
@@ -398,6 +527,22 @@ function AdminDashboard({ identity, onSignedOut }: { identity: AdminIdentity; on
   const updateLocalInquiry = (next: Inquiry) => {
     setInquiries((current) => current.map((item) => item.id === next.id ? next : item));
     setSelected(next);
+  };
+
+  const openInquiry = (inquiry: Inquiry) => {
+    if (inquiry.viewedAt) {
+      setSelected(inquiry);
+      return;
+    }
+    const viewedAt = new Date().toISOString();
+    setSelected({ ...inquiry, viewedAt });
+    setInquiries((current) => current.map((item) => item.id === inquiry.id ? { ...item, viewedAt } : item));
+    void markInquiryViewedInSupabase(inquiry.id, viewedAt).then((saved) => {
+      if (!saved) {
+        setInquiries((current) => current.map((item) => item.id === inquiry.id ? { ...item, viewedAt: undefined } : item));
+        setError('El lead se abrió, pero no se pudo guardar como leído. Pulsa Actualizar e inténtalo otra vez.');
+      }
+    });
   };
 
   return (
@@ -427,13 +572,36 @@ function AdminDashboard({ identity, onSignedOut }: { identity: AdminIdentity; on
           </button>
         </div>
 
-        <section aria-label="Resumen de leads" className="mt-8 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-3xl bg-stone-950 p-5 text-white"><UserRound className="h-5 w-5 text-rose-300" aria-hidden="true" /><p className="mt-5 text-3xl font-black">{inquiries.length}</p><p className="text-sm text-stone-400">Total recibido</p></div>
-          <div className="rounded-3xl bg-white p-5"><Clock3 className="h-5 w-5 text-amber-600" aria-hidden="true" /><p className="mt-5 text-3xl font-black">{inquiries.filter((item) => item.status === 'pending').length}</p><p className="text-sm text-stone-500">Pendientes</p></div>
-          <div className="rounded-3xl bg-white p-5"><CalendarDays className="h-5 w-5 text-emerald-700" aria-hidden="true" /><p className="mt-5 text-3xl font-black">{inquiries.filter((item) => item.status === 'booked').length}</p><p className="text-sm text-stone-500">Reservados</p></div>
+        <section aria-label="Resumen de leads" className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <div className="col-span-2 rounded-3xl bg-stone-950 p-5 text-white lg:col-span-1"><UserRound className="h-5 w-5 text-rose-300" aria-hidden="true" /><p className="mt-5 text-3xl font-black">{inquiries.length}</p><p className="text-sm text-stone-400">Total recibido</p></div>
+          <button type="button" onClick={() => setNewOnly((value) => !value)} aria-pressed={newOnly} className={`rounded-3xl p-5 text-left transition ${newOnly ? 'bg-[#C9362B] text-white' : 'bg-white hover:ring-2 hover:ring-[#C9362B]/20'}`}><Zap className="h-5 w-5" aria-hidden="true" /><p className="mt-5 text-3xl font-black">{stats.newCount}</p><p className={`text-sm ${newOnly ? 'text-white/80' : 'text-stone-500'}`}>Nuevos sin abrir</p></button>
+          <div className="rounded-3xl bg-white p-5"><TrendingUp className="h-5 w-5 text-blue-700" aria-hidden="true" /><p className="mt-5 text-3xl font-black">{stats.recentCount}</p><p className="text-sm text-stone-500">Últimos 7 días</p></div>
+          <div className="rounded-3xl bg-white p-5"><Clock3 className="h-5 w-5 text-amber-600" aria-hidden="true" /><p className="mt-5 text-3xl font-black">{stats.pendingCount}</p><p className="text-sm text-stone-500">Pendientes</p></div>
+          <div className="rounded-3xl bg-white p-5"><Percent className="h-5 w-5 text-emerald-700" aria-hidden="true" /><p className="mt-5 text-3xl font-black">{percentage(stats.bookedCount, inquiries.length)}%</p><p className="text-sm text-stone-500">Reservados / completados</p></div>
         </section>
 
-        <div className="mt-8 grid gap-3 rounded-3xl bg-white p-3 sm:grid-cols-[1fr_auto]">
+        <section aria-label="Estadísticas de captación" className="mt-4 grid gap-4 lg:grid-cols-2">
+          <div className="rounded-3xl bg-white p-5 sm:p-6">
+            <div className="flex items-center gap-2"><Megaphone className="h-5 w-5 text-[#C9362B]" aria-hidden="true" /><h2 className="font-black">Origen de los leads</h2></div>
+            <div className="mt-5 space-y-4">
+              {(['google', 'meta', 'direct', 'referral', 'other'] as AttributionChannel[]).map((channel) => {
+                const count = stats.channelCounts[channel];
+                const share = percentage(count, inquiries.length);
+                return <div key={channel}><div className="flex justify-between gap-3 text-sm"><span className="font-bold">{sourceOptionLabel(channel)}</span><span className="text-stone-500">{count} · {share}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-stone-100"><div className="h-full rounded-full bg-[#C9362B]" style={{ width: `${share}%` }} /></div></div>;
+              })}
+            </div>
+          </div>
+          <div className="rounded-3xl bg-white p-5 sm:p-6">
+            <div className="flex items-center gap-2"><BarChart3 className="h-5 w-5 text-[#C9362B]" aria-hidden="true" /><h2 className="font-black">Interés por estilo</h2></div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {(Object.entries(styleLabels) as Array<[Inquiry['style'], string]>).map(([style, label]) => (
+                <div key={style} className="rounded-2xl bg-stone-100 p-4"><p className="text-sm font-bold">{label}</p><p className="mt-2 text-2xl font-black">{stats.styleCounts[style] || 0}</p></div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <div className="mt-8 grid gap-3 rounded-3xl bg-white p-3 md:grid-cols-2 xl:grid-cols-[1fr_auto_auto_auto_auto]">
           <label className="relative" htmlFor="lead-search">
             <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden="true" />
             <span className="sr-only">Buscar leads</span>
@@ -443,7 +611,26 @@ function AdminDashboard({ identity, onSignedOut }: { identity: AdminIdentity; on
             <option value="all">Todos los estados</option>
             {statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
+          <select aria-label="Filtrar por origen" value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value as 'all' | AttributionChannel)} className="min-h-12 rounded-2xl border border-stone-200 bg-white px-4 font-bold">
+            <option value="all">Todos los orígenes</option>
+            {(['google', 'meta', 'direct', 'referral', 'other'] as AttributionChannel[]).map((channel) => <option key={channel} value={channel}>{sourceOptionLabel(channel)}</option>)}
+          </select>
+          <select aria-label="Filtrar por etiqueta" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} className="min-h-12 rounded-2xl border border-stone-200 bg-white px-4 font-bold">
+            <option value="all">Todas las etiquetas</option>
+            {allTags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
+          </select>
+          <label className="relative">
+            <ArrowUpDown className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden="true" />
+            <span className="sr-only">Ordenar leads</span>
+            <select aria-label="Ordenar leads" value={sort} onChange={(event) => setSort(event.target.value as SortOption)} className="min-h-12 w-full appearance-none rounded-2xl border border-stone-200 bg-white pl-11 pr-8 font-bold">
+              <option value="newest">Más recientes</option><option value="oldest">Más antiguos</option><option value="name-asc">Nombre A–Z</option><option value="name-desc">Nombre Z–A</option><option value="status">Por estado</option><option value="source">Por origen</option>
+            </select>
+          </label>
         </div>
+
+        {(newOnly || filter !== 'all' || sourceFilter !== 'all' || tagFilter !== 'all' || search) ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm"><span className="font-bold">Mostrando {visible.length} de {inquiries.length}</span><button type="button" onClick={() => { setSearch(''); setFilter('all'); setSourceFilter('all'); setTagFilter('all'); setNewOnly(false); }} className="rounded-full border border-stone-300 bg-white px-3 py-2 font-bold hover:border-stone-950">Limpiar filtros</button></div>
+        ) : null}
 
         {error ? <div role="alert" className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-900">{error}</div> : null}
         {loading ? <div className="mt-10 flex items-center justify-center text-sm font-bold text-stone-500"><Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />Cargando consultas…</div> : null}
@@ -454,8 +641,9 @@ function AdminDashboard({ identity, onSignedOut }: { identity: AdminIdentity; on
             {visible.map((inquiry) => {
               const meta = statusMeta(inquiry.status);
               return (
-                <button key={inquiry.id} onClick={() => setSelected(inquiry)} className="grid w-full gap-4 rounded-3xl border border-stone-200 bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-stone-400 hover:shadow-lg sm:grid-cols-[1.2fr_0.9fr_0.8fr_auto] sm:items-center">
-                  <span><span className="block text-lg font-black">{inquiry.fullName}</span><span className="mt-1 block text-xs text-stone-500">{formatDate(inquiry.createdAt)}</span></span>
+                <button key={inquiry.id} onClick={() => openInquiry(inquiry)} className={`relative grid w-full gap-4 overflow-hidden rounded-3xl border bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-stone-400 hover:shadow-lg sm:grid-cols-[1.2fr_0.9fr_0.8fr_auto] sm:items-center ${inquiry.viewedAt ? 'border-stone-200' : 'border-[#C9362B]/40 ring-2 ring-[#C9362B]/10'}`}>
+                  {!inquiry.viewedAt ? <span className="absolute left-0 top-0 h-full w-1.5 bg-[#C9362B]" aria-hidden="true" /> : null}
+                  <span><span className="flex flex-wrap items-center gap-2"><span className="block text-lg font-black">{inquiry.fullName}</span>{!inquiry.viewedAt ? <span className="rounded-full bg-[#C9362B] px-2.5 py-1 text-[10px] font-black tracking-wide text-white">NUEVO</span> : null}</span><span className="mt-1 block text-xs text-stone-500">{formatDate(inquiry.createdAt)}</span>{(inquiry.tags || []).length ? <span className="mt-2 flex flex-wrap gap-1">{(inquiry.tags || []).slice(0, 3).map((tag) => <span key={tag} className="rounded-full bg-stone-100 px-2 py-1 text-[10px] font-bold text-stone-700"><Tag className="mr-1 inline h-3 w-3" aria-hidden="true" />{tag}</span>)}</span> : null}</span>
                   <span className="text-sm"><span className="block font-bold">{styleLabels[inquiry.style]}</span><span className="mt-1 block text-stone-500">{inquiry.placement}</span><span className="mt-1 block text-xs font-bold text-[#C9362B]">{attributionLabel(inquiry)}</span></span>
                   <span className="text-sm text-stone-600">{inquiry.email || inquiry.instagram || inquiry.phone || 'Sin contacto'}</span>
                   <span className={`justify-self-start rounded-full px-3 py-1 text-xs font-black sm:justify-self-end ${meta.color}`}>{meta.label}</span>

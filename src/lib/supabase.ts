@@ -176,6 +176,10 @@ function mapInquiry(row: Record<string, unknown>): Inquiry {
     referenceImages,
     placementPhoto: typeof row.placement_photo === 'string' ? row.placement_photo : null,
     status: row.status as Inquiry['status'],
+    viewedAt: typeof row.viewed_at === 'string' ? row.viewed_at : undefined,
+    tags: Array.isArray(row.tags)
+      ? row.tags.filter((value): value is string => typeof value === 'string')
+      : [],
     artistNotes: typeof row.artist_notes === 'string' ? row.artist_notes : '',
     medicalNotes: typeof row.medical_notes === 'string' ? row.medical_notes : undefined,
     createdAt: String(row.created_at || ''),
@@ -257,6 +261,30 @@ export async function updateInquiryNotesInSupabase(id: string, artistNotes: stri
   const { data, error } = await supabase
     .from('inquiries')
     .update({ artist_notes: artistNotes.trim() || null })
+    .eq('id', id)
+    .select('id')
+    .maybeSingle();
+  return !error && data?.id === id;
+}
+
+export async function markInquiryViewedInSupabase(id: string, viewedAt: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { data, error } = await supabase
+    .from('inquiries')
+    .update({ viewed_at: viewedAt })
+    .eq('id', id)
+    .is('viewed_at', null)
+    .select('id')
+    .maybeSingle();
+  return !error && (!data || data.id === id);
+}
+
+export async function updateInquiryTagsInSupabase(id: string, tags: string[]): Promise<boolean> {
+  if (!supabase) return false;
+  const normalizedTags = [...new Set(tags.map((tag) => tag.trim()).filter(Boolean))].slice(0, 8);
+  const { data, error } = await supabase
+    .from('inquiries')
+    .update({ tags: normalizedTags })
     .eq('id', id)
     .select('id')
     .maybeSingle();

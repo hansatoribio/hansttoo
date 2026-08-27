@@ -29,6 +29,8 @@ create table if not exists public.inquiries (
   fbclid text,
   landing_path text not null default '/',
   status text not null default 'pending',
+  viewed_at timestamptz,
+  tags text[] not null default '{}',
   artist_notes text,
   medical_notes text,
   created_at timestamptz not null default now(),
@@ -58,6 +60,23 @@ alter table public.inquiries add column if not exists gbraid text;
 alter table public.inquiries add column if not exists wbraid text;
 alter table public.inquiries add column if not exists fbclid text;
 alter table public.inquiries add column if not exists landing_path text not null default '/';
+alter table public.inquiries add column if not exists tags text[] not null default '{}';
+
+-- Existing consultations are treated as already reviewed. New rows remain
+-- unread until the administrator opens them for the first time.
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'inquiries' and column_name = 'viewed_at'
+  ) then
+    alter table public.inquiries add column viewed_at timestamptz default now();
+    alter table public.inquiries alter column viewed_at drop default;
+  end if;
+end $$;
+
+alter table public.inquiries drop constraint if exists inquiries_tags_count;
+alter table public.inquiries add constraint inquiries_tags_count check (cardinality(tags) <= 8);
 
 alter table public.inquiries drop constraint if exists inquiries_attribution_length;
 alter table public.inquiries add constraint inquiries_attribution_length check (
@@ -109,6 +128,8 @@ for insert
 to anon, authenticated
 with check (
   status = 'pending'
+  and viewed_at is null
+  and cardinality(tags) = 0
   and artist_notes is null
   and medical_notes is null
   and created_at <= now() + interval '5 minutes'
