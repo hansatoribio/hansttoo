@@ -33,9 +33,9 @@ const portfolioPieces: PortfolioPiece[] = [
     altEn: 'Detailed black and grey anime character tattoo by Hans', altEs: 'Tatuaje detallado de personaje de anime en negro y gris realizado por Hans',
   },
   {
-    id: 'anime-naruto', style: 'anime', image: '/portfolio/anime-naruto-tattoo-nyc.webp', width: 1057, height: 1600,
-    titleEn: 'Naruto-inspired tattoo', titleEs: 'Tatuaje inspirado en Naruto',
-    altEn: 'Black and grey Naruto-inspired anime tattoo by Hans', altEs: 'Tatuaje de anime inspirado en Naruto en negro y gris realizado por Hans',
+    id: 'anime-madara', style: 'anime', image: '/portfolio/anime-madara-tattoo-nyc.webp', width: 1200, height: 1600,
+    titleEn: 'Madara Uchiha tattoo', titleEs: 'Tatuaje de Madara Uchiha',
+    altEn: 'Black and grey Madara Uchiha anime tattoo by Hans in NYC', altEs: 'Tatuaje de anime de Madara Uchiha en negro y gris realizado por Hans en NYC',
   },
   {
     id: 'anime-panel', style: 'anime', image: '/portfolio/anime-manga-panel-tattoo-nyc.webp', width: 1067, height: 1600,
@@ -53,9 +53,9 @@ const portfolioPieces: PortfolioPiece[] = [
     altEn: 'Anime-style character and mushroom leg tattoo by Hans', altEs: 'Tatuaje de pierna con personaje estilo anime y hongos realizado por Hans',
   },
   {
-    id: 'anime-color-character', style: 'anime', image: '/portfolio/anime-color-character-tattoo-nyc.webp', width: 1067, height: 1600,
-    titleEn: 'Color character tattoo', titleEs: 'Tatuaje de personaje a color',
-    altEn: 'Small custom color character tattoo by Hans', altEs: 'Tatuaje pequeño de personaje personalizado a color realizado por Hans',
+    id: 'anime-akaza', style: 'anime', image: '/portfolio/anime-akaza-tattoo-nyc.webp', width: 1200, height: 1600,
+    titleEn: 'Akaza anime tattoo', titleEs: 'Tatuaje de anime de Akaza',
+    altEn: 'Black and grey Akaza anime tattoo by Hans in NYC', altEs: 'Tatuaje de anime de Akaza en negro y gris realizado por Hans en NYC',
   },
   {
     id: 'micro-empire-state', style: 'microrealism', image: '/portfolio/microrealism-empire-state-tattoo-nyc.webp', width: 1067, height: 1600,
@@ -68,9 +68,9 @@ const portfolioPieces: PortfolioPiece[] = [
     altEn: 'Black and grey smoking skeleton microrealism tattoo by Hans', altEs: 'Tatuaje de esqueleto en microrrealismo negro y gris realizado por Hans',
   },
   {
-    id: 'micro-elephant', style: 'microrealism', image: '/portfolio/microrealism-dali-elephant-tattoo-nyc.webp', width: 901, height: 1600,
-    titleEn: 'Surreal elephant microrealism', titleEs: 'Elefante surrealista en microrrealismo',
-    altEn: 'Surreal long-legged elephant microrealism tattoo by Hans', altEs: 'Tatuaje de elefante surrealista de patas largas realizado por Hans', fit: 'contain',
+    id: 'micro-melting-clock', style: 'microrealism', image: '/portfolio/microrealism-melting-clock-tattoo-nyc.webp', width: 1067, height: 1600,
+    titleEn: 'Melting clock microrealism', titleEs: 'Reloj derretido en microrrealismo',
+    altEn: 'Fine-detail melting clock microrealism tattoo by Hans in NYC', altEs: 'Tatuaje de reloj derretido en microrrealismo y detalle fino realizado por Hans en NYC', fit: 'contain',
   },
   {
     id: 'micro-sea-turtle', style: 'microrealism', image: '/portfolio/microrealism-sea-turtle-tattoo-nyc.webp', width: 1067, height: 1600,
