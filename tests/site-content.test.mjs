@@ -137,6 +137,31 @@ test('admin uses Supabase Auth and RLS without the removed visual editor', async
   await assert.rejects(access('src/components/Dashboard.tsx'));
 });
 
+test('persistent visit analytics are consent-gated, aggregate-only, and admin protected', async () => {
+  const [app, admin, supabaseClient, schema, privacy] = await Promise.all([
+    readFile('src/App.tsx', 'utf8'),
+    readFile('src/components/AdminPage.tsx', 'utf8'),
+    readFile('src/lib/supabase.ts', 'utf8'),
+    readFile('supabase_schema.sql', 'utf8'),
+    readFile('src/components/PrivacyPolicy.tsx', 'utf8'),
+  ]);
+  assert.match(app, /measurementConsent !== 'granted'/);
+  assert.match(app, /trackSiteVisit/);
+  assert.match(supabaseClient, /site_visit_events/);
+  assert.match(supabaseClient, /fetchAdminVisitMetrics/);
+  assert.match(schema, /alter table public\.site_visit_events enable row level security/);
+  assert.match(schema, /create policy public_record_site_visit/);
+  assert.match(schema, /create policy admin_read_site_visits/);
+  assert.match(schema, /security invoker/);
+  assert.match(schema, /revoke all on function public\.get_admin_visit_metrics\(integer\) from public, anon/);
+  assert.doesNotMatch(schema, /site_visit_events[\s\S]{0,800}\bip_address\b/i);
+  assert.match(admin, /Visitas y conversión/);
+  assert.match(admin, /Visitantes totales/);
+  assert.match(admin, /Páginas más visitadas/);
+  assert.match(privacy, /random browser and session identifiers/);
+  assert.match(privacy, /identificadores aleatorios del navegador y la sesión/);
+});
+
 test('mobile hero uses content height instead of forcing a full viewport', async () => {
   const hero = await readFile('src/components/Hero.tsx', 'utf8');
   assert.match(hero, /sm:min-h-\[calc\(100svh-4rem\)\]/);

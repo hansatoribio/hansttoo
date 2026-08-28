@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ArrowUpDown,
   BarChart3,
+  CalendarDays,
   CheckCircle2,
   Clock3,
   ExternalLink,
@@ -15,19 +16,23 @@ import {
   Mail,
   MessageCircle,
   Megaphone,
+  Monitor,
+  MousePointerClick,
   Percent,
   RefreshCcw,
   Search,
   Tag,
   TrendingUp,
+  Users,
   UserRound,
   Zap,
   X,
 } from 'lucide-react';
-import type { AdminIdentity } from '../lib/supabase';
+import type { AdminIdentity, AdminVisitMetrics } from '../lib/supabase';
 import {
   createSignedInquiryMediaUrls,
   fetchAdminInquiries,
+  fetchAdminVisitMetrics,
   getAdminIdentity,
   isSupabaseConfigured,
   markInquiryViewedInSupabase,
@@ -110,6 +115,19 @@ function sourceOptionLabel(channel: AttributionChannel) {
 
 function percentage(value: number, total: number) {
   return total ? Math.round((value / total) * 100) : 0;
+}
+
+function analyticsSourceLabel(source: string) {
+  return ({ google: 'Google', meta: 'Meta / Instagram', direct: 'Directo', referral: 'Referencias', other: 'Otro' } as Record<string, string>)[source] || source;
+}
+
+function deviceLabel(device: string) {
+  return ({ mobile: 'Móvil', tablet: 'Tableta', desktop: 'Computadora' } as Record<string, string>)[device] || device;
+}
+
+function shortMetricDate(value: string) {
+  const date = new Date(`${value}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('es-US', { month: 'short', day: 'numeric' }).format(date);
 }
 
 function safeDateValue(value: string) {
@@ -451,9 +469,11 @@ function LeadDetail({
 
 function AdminDashboard({ identity, onSignedOut }: { identity: AdminIdentity; onSignedOut: () => void }) {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [visitMetrics, setVisitMetrics] = useState<AdminVisitMetrics | null>(null);
   const [selected, setSelected] = useState<Inquiry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [analyticsError, setAnalyticsError] = useState('');
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | InquiryStatus>('all');
   const [sourceFilter, setSourceFilter] = useState<'all' | AttributionChannel>('all');
@@ -464,9 +484,15 @@ function AdminDashboard({ identity, onSignedOut }: { identity: AdminIdentity; on
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
-    const result = await fetchAdminInquiries();
-    setInquiries(result.inquiries);
-    if (result.error) setError('No se pudieron cargar los leads. Revisa que Auth y las políticas RLS estén configuradas.');
+    setAnalyticsError('');
+    const [inquiryResult, metricResult] = await Promise.all([
+      fetchAdminInquiries(),
+      fetchAdminVisitMetrics(30),
+    ]);
+    setInquiries(inquiryResult.inquiries);
+    setVisitMetrics(metricResult.metrics);
+    if (inquiryResult.error) setError('No se pudieron cargar los leads. Revisa que Auth y las políticas RLS estén configuradas.');
+    if (metricResult.error) setAnalyticsError('Las métricas todavía no están disponibles. Revisa que la migración de analítica esté aplicada en Supabase.');
     setLoading(false);
   }, []);
 
@@ -518,6 +544,11 @@ function AdminDashboard({ identity, onSignedOut }: { identity: AdminIdentity; on
       styleCounts,
     };
   }, [inquiries]);
+
+  const maxDailyVisitors = useMemo(
+    () => Math.max(1, ...(visitMetrics?.daily.map((item) => item.visitors) || [0])),
+    [visitMetrics],
+  );
 
   const logout = async () => {
     await signOutAdmin();
@@ -571,6 +602,78 @@ function AdminDashboard({ identity, onSignedOut }: { identity: AdminIdentity; on
             <RefreshCcw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />Actualizar
           </button>
         </div>
+
+        <section aria-labelledby="traffic-metrics-title" className="mt-8 rounded-[2rem] border border-stone-200 bg-white p-5 shadow-sm sm:p-7">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs font-black tracking-[0.2em] text-[#C9362B]">TRÁFICO DEL SITIO</p>
+              <h2 id="traffic-metrics-title" className="mt-2 text-2xl font-black tracking-[-0.04em] sm:text-3xl">Visitas y conversión</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-600">Conteo persistente de navegadores que aceptaron la medición. No se guardan IP, ubicación exacta ni información personal.</p>
+            </div>
+            <span className="self-start rounded-full bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-800">ACTUALIZACIÓN EN VIVO</span>
+          </div>
+
+          {analyticsError ? <div role="alert" className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-900">{analyticsError}</div> : null}
+
+          {!loading && visitMetrics ? (
+            <>
+              <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
+                <div className="rounded-3xl bg-stone-950 p-5 text-white"><Users className="h-5 w-5 text-rose-300" aria-hidden="true" /><p className="mt-5 text-3xl font-black">{visitMetrics.totalVisitors}</p><p className="text-sm text-stone-400">Visitantes totales</p></div>
+                <div className="rounded-3xl bg-stone-100 p-5"><MousePointerClick className="h-5 w-5 text-[#C9362B]" aria-hidden="true" /><p className="mt-5 text-3xl font-black">{visitMetrics.visitorsToday}</p><p className="text-sm text-stone-500">Visitantes hoy</p></div>
+                <div className="rounded-3xl bg-stone-100 p-5"><CalendarDays className="h-5 w-5 text-blue-700" aria-hidden="true" /><p className="mt-5 text-3xl font-black">{visitMetrics.visitors7Days}</p><p className="text-sm text-stone-500">Últimos 7 días</p></div>
+                <div className="rounded-3xl bg-stone-100 p-5"><TrendingUp className="h-5 w-5 text-violet-700" aria-hidden="true" /><p className="mt-5 text-3xl font-black">{visitMetrics.visitors30Days}</p><p className="text-sm text-stone-500">Últimos 30 días</p></div>
+                <div className="rounded-3xl bg-stone-100 p-5"><BarChart3 className="h-5 w-5 text-amber-700" aria-hidden="true" /><p className="mt-5 text-3xl font-black">{visitMetrics.periodPageViews}</p><p className="text-sm text-stone-500">Páginas vistas · 30 días</p></div>
+                <div className="rounded-3xl bg-emerald-50 p-5"><Percent className="h-5 w-5 text-emerald-700" aria-hidden="true" /><p className="mt-5 text-3xl font-black">{visitMetrics.conversionRate}%</p><p className="text-sm text-emerald-800">Conversión medible</p></div>
+              </div>
+
+              <div className="mt-5 grid gap-4 xl:grid-cols-[1.5fr_1fr]">
+                <div className="rounded-3xl border border-stone-200 p-5 sm:p-6">
+                  <div className="flex items-center justify-between gap-4"><div><h3 className="font-black">Actividad de los últimos 30 días</h3><p className="mt-1 text-xs text-stone-500">Visitantes únicos por día</p></div><p className="text-right text-xs text-stone-500"><strong className="block text-lg text-stone-950">{visitMetrics.periodSessions}</strong>sesiones</p></div>
+                  <ol className="mt-6 flex h-44 items-end gap-1" aria-label="Visitantes diarios">
+                    {visitMetrics.daily.map((point, index) => {
+                      const height = point.visitors ? Math.max(8, (point.visitors / maxDailyVisitors) * 100) : 3;
+                      return (
+                        <li key={point.date} className="group relative flex h-full min-w-0 flex-1 items-end" title={`${shortMetricDate(point.date)}: ${point.visitors} visitantes, ${point.pageViews} páginas vistas`}>
+                          <span className="sr-only">{shortMetricDate(point.date)}: {point.visitors} visitantes y {point.pageViews} páginas vistas.</span>
+                          <span className="w-full rounded-t-md bg-[#C9362B] transition group-hover:bg-stone-950" style={{ height: `${height}%` }} aria-hidden="true" />
+                          {(index === 0 || index === visitMetrics.daily.length - 1) ? <span className="absolute top-full mt-2 text-[10px] text-stone-500 last:right-0">{shortMetricDate(point.date)}</span> : null}
+                        </li>
+                      );
+                    })}
+                  </ol>
+                  <div className="mt-8 grid grid-cols-3 gap-3 border-t border-stone-200 pt-4 text-center text-sm"><div><strong className="block text-xl">{visitMetrics.periodVisitors}</strong><span className="text-stone-500">visitantes</span></div><div><strong className="block text-xl">{visitMetrics.periodPageViews}</strong><span className="text-stone-500">páginas vistas</span></div><div><strong className="block text-xl">{visitMetrics.periodLeads}</strong><span className="text-stone-500">consultas</span></div></div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                  <div className="rounded-3xl border border-stone-200 p-5">
+                    <div className="flex items-center gap-2"><Megaphone className="h-5 w-5 text-[#C9362B]" aria-hidden="true" /><h3 className="font-black">De dónde llegan</h3></div>
+                    <div className="mt-4 space-y-3">
+                      {['google', 'meta', 'direct', 'referral', 'other'].map((source) => {
+                        const views = visitMetrics.sources.find((item) => item.source === source)?.pageViews || 0;
+                        const share = percentage(views, visitMetrics.periodPageViews);
+                        return <div key={source}><div className="flex justify-between text-sm"><span className="font-bold">{analyticsSourceLabel(source)}</span><span className="text-stone-500">{views} · {share}%</span></div><div className="mt-1.5 h-2 overflow-hidden rounded-full bg-stone-100"><div className="h-full rounded-full bg-[#C9362B]" style={{ width: `${share}%` }} /></div></div>;
+                      })}
+                    </div>
+                  </div>
+                  <div className="rounded-3xl border border-stone-200 p-5">
+                    <div className="flex items-center gap-2"><Monitor className="h-5 w-5 text-[#C9362B]" aria-hidden="true" /><h3 className="font-black">Dispositivos</h3></div>
+                    <div className="mt-4 grid grid-cols-3 gap-2">
+                      {['mobile', 'tablet', 'desktop'].map((device) => {
+                        const views = visitMetrics.devices.find((item) => item.device === device)?.pageViews || 0;
+                        return <div key={device} className="rounded-2xl bg-stone-100 p-3 text-center"><strong className="block text-xl">{views}</strong><span className="text-[11px] text-stone-500">{deviceLabel(device)}</span></div>;
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-3xl border border-stone-200 p-5">
+                <h3 className="font-black">Páginas más visitadas</h3>
+                {visitMetrics.topPages.length ? <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{visitMetrics.topPages.map((page) => <div key={page.path} className="flex items-center justify-between gap-3 rounded-2xl bg-stone-100 px-4 py-3 text-sm"><span className="min-w-0 truncate font-mono">{page.path}</span><strong>{page.pageViews}</strong></div>)}</div> : <p className="mt-3 text-sm text-stone-500">Las páginas aparecerán cuando comiencen a registrarse visitas con medición aceptada.</p>}
+              </div>
+            </>
+          ) : null}
+        </section>
 
         <section aria-label="Resumen de leads" className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-5">
           <div className="col-span-2 rounded-3xl bg-stone-950 p-5 text-white lg:col-span-1"><UserRound className="h-5 w-5 text-rose-300" aria-hidden="true" /><p className="mt-5 text-3xl font-black">{inquiries.length}</p><p className="text-sm text-stone-400">Total recibido</p></div>

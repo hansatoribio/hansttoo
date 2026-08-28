@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Inquiry } from '../types';
+import type { Inquiry, Language, LeadAttribution } from '../types';
 
 const supabaseUrl = String(import.meta.env.VITE_PUBLIC_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL || '').trim();
 const supabaseAnonKey = String(import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
@@ -27,9 +27,120 @@ export interface AdminInquiryResult {
   error?: string;
 }
 
+export interface VisitMetricPoint {
+  date: string;
+  visitors: number;
+  sessions: number;
+  pageViews: number;
+}
+
+export interface AdminVisitMetrics {
+  periodDays: number;
+  totalVisitors: number;
+  totalPageViews: number;
+  visitorsToday: number;
+  visitors7Days: number;
+  visitors30Days: number;
+  periodVisitors: number;
+  periodSessions: number;
+  periodPageViews: number;
+  periodLeads: number;
+  conversionRate: number;
+  daily: VisitMetricPoint[];
+  sources: Array<{ source: string; pageViews: number }>;
+  devices: Array<{ device: string; pageViews: number }>;
+  topPages: Array<{ path: string; pageViews: number }>;
+}
+
+export interface AdminVisitMetricResult {
+  metrics: AdminVisitMetrics | null;
+  error?: string;
+}
+
+const analyticsVisitorKey = 'hansttoo_analytics_visitor_id';
+const analyticsSessionKey = 'hansttoo_analytics_session_id';
+let lastTrackedVisit = { key: '', timestamp: 0 };
+
 function requireSupabase(): SupabaseClient {
   if (!supabase) throw new Error('Supabase is not configured.');
   return supabase;
+}
+
+function createRandomId(): string {
+  if (typeof window !== 'undefined' && typeof window.crypto?.randomUUID === 'function') {
+    return window.crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
+    const random = Math.floor(Math.random() * 16);
+    const value = character === 'x' ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
+}
+
+function storedId(storage: Storage, key: string, create: boolean): string | null {
+  try {
+    const existing = storage.getItem(key);
+    if (existing && /^[0-9a-f-]{36}$/i.test(existing)) return existing;
+    if (!create) return null;
+    const next = createRandomId();
+    storage.setItem(key, next);
+    return next;
+  } catch {
+    return create ? createRandomId() : null;
+  }
+}
+
+function analyticsIdentifiers(create: boolean) {
+  if (typeof window === 'undefined') return { visitorId: null, sessionId: null };
+  return {
+    visitorId: storedId(window.localStorage, analyticsVisitorKey, create),
+    sessionId: storedId(window.sessionStorage, analyticsSessionKey, create),
+  };
+}
+
+function analyticsSource(attribution: LeadAttribution): 'google' | 'meta' | 'direct' | 'referral' | 'other' {
+  const source = attribution.source?.toLowerCase() || '';
+  const medium = attribution.medium?.toLowerCase() || '';
+  if (attribution.gclid || attribution.gbraid || attribution.wbraid || source.includes('google')) return 'google';
+  if (attribution.fbclid || ['meta', 'facebook', 'instagram'].some((value) => source.includes(value))) return 'meta';
+  if (source === 'direct') return 'direct';
+  if (medium === 'referral') return 'referral';
+  return 'other';
+}
+
+function analyticsDevice(): 'mobile' | 'tablet' | 'desktop' {
+  if (typeof navigator === 'undefined') return 'desktop';
+  const agent = navigator.userAgent.toLowerCase();
+  if (/ipad|tablet|kindle|silk/.test(agent)) return 'tablet';
+  if (/android|iphone|ipod|mobile/.test(agent)) return 'mobile';
+  return 'desktop';
+}
+
+export async function trackSiteVisit(details: {
+  path: string;
+  language: Language;
+  attribution: LeadAttribution;
+}): Promise<boolean> {
+  if (!supabase || typeof window === 'undefined') return false;
+  const pagePath = details.path.startsWith('/') ? details.path.split(/[?#]/, 1)[0].slice(0, 300) || '/' : '/';
+  const trackingKey = `${pagePath}:${details.language}`;
+  const timestamp = Date.now();
+  if (lastTrackedVisit.key === trackingKey && timestamp - lastTrackedVisit.timestamp < 3000) return true;
+
+  const { visitorId, sessionId } = analyticsIdentifiers(true);
+  if (!visitorId || !sessionId) return false;
+  lastTrackedVisit = { key: trackingKey, timestamp };
+
+  const { error } = await supabase.from('site_visit_events').insert({
+    visitor_id: visitorId,
+    session_id: sessionId,
+    page_path: pagePath,
+    source: analyticsSource(details.attribution),
+    device_type: analyticsDevice(),
+    language: details.language,
+  });
+  if (error) lastTrackedVisit = { key: '', timestamp: 0 };
+  return !error;
 }
 
 function base64ToBlob(base64Data: string): Blob {
@@ -119,6 +230,7 @@ export async function saveInquiryToSupabase(inquiry: Inquiry): Promise<{ success
       )),
     );
 
+    const { visitorId, sessionId } = analyticsIdentifiers(false);
     const { error } = await supabase.from('inquiries').insert({
       id: inquiry.id,
       full_name: inquiry.fullName,
@@ -143,6 +255,8 @@ export async function saveInquiryToSupabase(inquiry: Inquiry): Promise<{ success
       wbraid: inquiry.attribution?.wbraid || null,
       fbclid: inquiry.attribution?.fbclid || null,
       landing_path: inquiry.attribution?.landingPath || '/',
+      analytics_visitor_id: visitorId,
+      analytics_session_id: sessionId,
       status: 'pending',
       created_at: inquiry.createdAt || new Date().toISOString(),
     });
@@ -243,6 +357,57 @@ export async function fetchAdminInquiries(limit = 200): Promise<AdminInquiryResu
     .limit(limit);
   if (error) return { inquiries: [], error: error.code || 'load-failed' };
   return { inquiries: (data || []).map((row) => mapInquiry(row as Record<string, unknown>)) };
+}
+
+function numberMetric(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export async function fetchAdminVisitMetrics(days = 30): Promise<AdminVisitMetricResult> {
+  if (!supabase) return { metrics: null, error: 'not-configured' };
+  const { data, error } = await supabase.rpc('get_admin_visit_metrics', {
+    p_days: Math.max(1, Math.min(Math.round(days), 90)),
+  });
+  if (error || !data || typeof data !== 'object') {
+    return { metrics: null, error: error?.code || 'load-failed' };
+  }
+
+  const row = data as Record<string, unknown>;
+  const arrayValue = (value: unknown) => Array.isArray(value) ? value as Array<Record<string, unknown>> : [];
+  return {
+    metrics: {
+      periodDays: numberMetric(row.periodDays) || days,
+      totalVisitors: numberMetric(row.totalVisitors),
+      totalPageViews: numberMetric(row.totalPageViews),
+      visitorsToday: numberMetric(row.visitorsToday),
+      visitors7Days: numberMetric(row.visitors7Days),
+      visitors30Days: numberMetric(row.visitors30Days),
+      periodVisitors: numberMetric(row.periodVisitors),
+      periodSessions: numberMetric(row.periodSessions),
+      periodPageViews: numberMetric(row.periodPageViews),
+      periodLeads: numberMetric(row.periodLeads),
+      conversionRate: numberMetric(row.conversionRate),
+      daily: arrayValue(row.daily).map((item) => ({
+        date: String(item.date || ''),
+        visitors: numberMetric(item.visitors),
+        sessions: numberMetric(item.sessions),
+        pageViews: numberMetric(item.pageViews),
+      })),
+      sources: arrayValue(row.sources).map((item) => ({
+        source: String(item.source || 'other'),
+        pageViews: numberMetric(item.pageViews),
+      })),
+      devices: arrayValue(row.devices).map((item) => ({
+        device: String(item.device || 'desktop'),
+        pageViews: numberMetric(item.pageViews),
+      })),
+      topPages: arrayValue(row.topPages).map((item) => ({
+        path: String(item.path || '/'),
+        pageViews: numberMetric(item.pageViews),
+      })),
+    },
+  };
 }
 
 export async function updateInquiryStatusInSupabase(id: string, status: Inquiry['status']): Promise<boolean> {

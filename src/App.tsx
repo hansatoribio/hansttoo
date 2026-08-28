@@ -64,7 +64,8 @@ function resolveRoute(pathname: string): { language: Language; page: PageKind } 
 export default function App() {
   const [path, setPath] = useState(window.location.pathname);
   const [preselectedStyle, setPreselectedStyle] = useState<TattooStyle | null>(null);
-  const [consentOpen, setConsentOpen] = useState(() => getStoredTrackingConsent() === null);
+  const [measurementConsent, setMeasurementConsent] = useState<TrackingConsent | null>(() => getStoredTrackingConsent());
+  const [consentOpen, setConsentOpen] = useState(() => measurementConsent === null);
   const [leadAttribution] = useState(() => readLeadAttribution());
   const { language, page: currentPage } = resolveRoute(path);
 
@@ -81,6 +82,17 @@ export default function App() {
   useEffect(() => {
     updatePageMetadata(language, currentPage);
   }, [currentPage, language]);
+
+  useEffect(() => {
+    if (currentPage === 'admin' || measurementConsent !== 'granted') return;
+    let active = true;
+    void import('./lib/supabase').then(({ trackSiteVisit }) => {
+      if (active) void trackSiteVisit({ path, language, attribution: leadAttribution });
+    });
+    return () => {
+      active = false;
+    };
+  }, [currentPage, language, leadAttribution, measurementConsent, path]);
 
   const navigateRoute = (nextPath: string) => {
     window.history.pushState({}, '', nextPath);
@@ -107,6 +119,7 @@ export default function App() {
 
   const chooseTrackingConsent = (choice: TrackingConsent) => {
     updateTrackingConsent(choice);
+    setMeasurementConsent(choice);
     setConsentOpen(false);
   };
 

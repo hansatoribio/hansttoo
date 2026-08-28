@@ -172,6 +172,220 @@ with check (
   )
 );
 
+-- Privacy-conscious first-party traffic measurement. Events contain random
+-- browser/session identifiers and coarse dimensions only; no IP address,
+-- full referrer, query string, user agent, or contact information is stored.
+alter table public.inquiries add column if not exists analytics_visitor_id uuid;
+alter table public.inquiries add column if not exists analytics_session_id uuid;
+
+create index if not exists inquiries_analytics_visitor_id_idx
+on public.inquiries (analytics_visitor_id)
+where analytics_visitor_id is not null;
+
+create index if not exists inquiries_analytics_session_id_idx
+on public.inquiries (analytics_session_id)
+where analytics_session_id is not null;
+
+create table if not exists public.site_visit_events (
+  id bigint generated always as identity primary key,
+  visitor_id uuid not null,
+  session_id uuid not null,
+  page_path text not null,
+  source text not null default 'direct',
+  device_type text not null default 'desktop',
+  language text not null default 'en',
+  created_at timestamptz not null default now(),
+  constraint site_visit_events_path_valid check (
+    char_length(page_path) between 1 and 300
+    and left(page_path, 1) = '/'
+    and position('?' in page_path) = 0
+    and position('#' in page_path) = 0
+  ),
+  constraint site_visit_events_source_valid check (
+    source in ('google', 'meta', 'direct', 'referral', 'other')
+  ),
+  constraint site_visit_events_device_valid check (
+    device_type in ('mobile', 'tablet', 'desktop')
+  ),
+  constraint site_visit_events_language_valid check (language in ('en', 'es'))
+);
+
+create index if not exists site_visit_events_created_at_idx
+on public.site_visit_events (created_at desc);
+
+create index if not exists site_visit_events_visitor_created_idx
+on public.site_visit_events (visitor_id, created_at desc);
+
+create index if not exists site_visit_events_session_created_idx
+on public.site_visit_events (session_id, created_at desc);
+
+create index if not exists site_visit_events_source_created_idx
+on public.site_visit_events (source, created_at desc);
+
+alter table public.site_visit_events enable row level security;
+
+drop policy if exists public_record_site_visit on public.site_visit_events;
+drop policy if exists admin_read_site_visits on public.site_visit_events;
+
+revoke all on table public.site_visit_events from anon, authenticated;
+grant insert on table public.site_visit_events to anon, authenticated;
+grant select on table public.site_visit_events to authenticated;
+grant usage, select on sequence public.site_visit_events_id_seq to anon, authenticated;
+
+create policy public_record_site_visit
+on public.site_visit_events
+for insert
+to anon, authenticated
+with check (
+  created_at between now() - interval '5 minutes' and now() + interval '5 minutes'
+  and char_length(page_path) between 1 and 300
+  and left(page_path, 1) = '/'
+  and source in ('google', 'meta', 'direct', 'referral', 'other')
+  and device_type in ('mobile', 'tablet', 'desktop')
+  and language in ('en', 'es')
+);
+
+create policy admin_read_site_visits
+on public.site_visit_events
+for select
+to authenticated
+using (
+  exists (
+    select 1 from public.admin_users
+    where user_id = (select auth.uid())
+  )
+);
+
+-- Aggregation stays inside Postgres so the panel never needs to download raw
+-- visit rows. SECURITY INVOKER preserves the RLS checks above.
+create or replace function public.get_admin_visit_metrics(p_days integer default 30)
+returns jsonb
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  with params as (
+    select greatest(1, least(coalesce(p_days, 30), 90))::integer as days
+  ),
+  bounds as (
+    select
+      days,
+      (now() at time zone 'America/New_York')::date as today,
+      (((now() at time zone 'America/New_York')::date - (days - 1))::timestamp at time zone 'America/New_York') as period_start
+    from params
+  ),
+  period_events as (
+    select event.*
+    from public.site_visit_events event, bounds
+    where event.created_at >= bounds.period_start
+  ),
+  daily_series as (
+    select generate_series(bounds.today - (bounds.days - 1), bounds.today, interval '1 day')::date as day
+    from bounds
+  ),
+  daily_counts as (
+    select
+      series.day,
+      count(distinct event.visitor_id)::integer as visitors,
+      count(distinct event.session_id)::integer as sessions,
+      count(event.id)::integer as page_views
+    from daily_series series
+    left join period_events event
+      on (event.created_at at time zone 'America/New_York')::date = series.day
+    group by series.day
+    order by series.day
+  ),
+  source_counts as (
+    select source, count(*)::integer as page_views
+    from period_events
+    group by source
+    order by page_views desc, source
+  ),
+  device_counts as (
+    select device_type, count(*)::integer as page_views
+    from period_events
+    group by device_type
+    order by page_views desc, device_type
+  ),
+  page_counts as (
+    select page_path, count(*)::integer as page_views
+    from period_events
+    group by page_path
+    order by page_views desc, page_path
+    limit 8
+  ),
+  lead_counts as (
+    select
+      count(*)::integer as leads,
+      count(distinct analytics_session_id)::integer as converted_sessions
+    from public.inquiries, bounds
+    where created_at >= bounds.period_start
+  ),
+  period_totals as (
+    select
+      count(distinct visitor_id)::integer as visitors,
+      count(distinct session_id)::integer as sessions,
+      count(*)::integer as page_views
+    from period_events
+  )
+  select jsonb_build_object(
+    'periodDays', (select days from bounds),
+    'totalVisitors', (select count(distinct visitor_id)::integer from public.site_visit_events),
+    'totalPageViews', (select count(*)::integer from public.site_visit_events),
+    'visitorsToday', (
+      select count(distinct visitor_id)::integer
+      from public.site_visit_events, bounds
+      where (created_at at time zone 'America/New_York')::date = bounds.today
+    ),
+    'visitors7Days', (
+      select count(distinct visitor_id)::integer
+      from public.site_visit_events
+      where created_at >= now() - interval '7 days'
+    ),
+    'visitors30Days', (
+      select count(distinct visitor_id)::integer
+      from public.site_visit_events
+      where created_at >= now() - interval '30 days'
+    ),
+    'periodVisitors', (select visitors from period_totals),
+    'periodSessions', (select sessions from period_totals),
+    'periodPageViews', (select page_views from period_totals),
+    'periodLeads', (select leads from lead_counts),
+    'conversionRate', (
+      select case
+        when period_totals.sessions = 0 then 0
+        else round((lead_counts.converted_sessions::numeric / period_totals.sessions::numeric) * 100, 1)
+      end
+      from period_totals, lead_counts
+    ),
+    'daily', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'date', day,
+        'visitors', visitors,
+        'sessions', sessions,
+        'pageViews', page_views
+      ) order by day)
+      from daily_counts
+    ), '[]'::jsonb),
+    'sources', coalesce((
+      select jsonb_agg(jsonb_build_object('source', source, 'pageViews', page_views) order by page_views desc)
+      from source_counts
+    ), '[]'::jsonb),
+    'devices', coalesce((
+      select jsonb_agg(jsonb_build_object('device', device_type, 'pageViews', page_views) order by page_views desc)
+      from device_counts
+    ), '[]'::jsonb),
+    'topPages', coalesce((
+      select jsonb_agg(jsonb_build_object('path', page_path, 'pageViews', page_views) order by page_views desc)
+      from page_counts
+    ), '[]'::jsonb)
+  );
+$$;
+
+revoke all on function public.get_admin_visit_metrics(integer) from public, anon;
+grant execute on function public.get_admin_visit_metrics(integer) to authenticated;
+
 -- Disable the legacy browser-readable admin/settings paths when those tables exist.
 do $$
 begin
