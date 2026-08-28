@@ -7,7 +7,7 @@ type PageKind = 'home' | 'privacy' | 'thank-you' | 'admin';
 const metadata: Record<Language, Record<PageKind, { title: string; description: string }>> = {
   en: {
     home: {
-      title: 'Anime Tattoo Artist NYC | Fine Line & Microrealism | Hans',
+      title: 'Hansttoo | Anime, Fine Line & Microrealism Tattoos NYC',
       description: 'Request a custom anime, manga, microrealism, or fine-line tattoo consultation with Hans at Gara Art Studio in Midtown Manhattan, New York City.',
     },
     privacy: {
@@ -25,7 +25,7 @@ const metadata: Record<Language, Record<PageKind, { title: string; description: 
   },
   es: {
     home: {
-      title: 'Tatuador de Anime en NYC | Línea Fina y Microrealismo | Hans',
+      title: 'Hansttoo | Tatuajes Anime, Línea Fina y Microrealismo NYC',
       description: 'Solicita una consulta con Hans para un tatuaje personalizado de anime, manga, microrealismo o línea fina en Gara Art Studio, Midtown Manhattan.',
     },
     privacy: {

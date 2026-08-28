@@ -10,8 +10,8 @@ const staticFallbacks = {
   esHome: `
       <main id="static-seo-content">
         <header>
-          <a href="/es" aria-label="Hans | Tatuador en NYC inicio">hansttoo.</a>
-          <p>HANS | TATUADOR EN NYC</p>
+          <a href="/es" aria-label="Hansttoo | Tatuador en NYC inicio">hansttoo.</a>
+          <p>HANSTTOO | HANS | TATUADOR EN NYC</p>
           <h1>Tatuajes personalizados de anime, microrrealismo y línea fina</h1>
           <p>Tatuajes personalizados por Hans en Gara Art Studio, Midtown Manhattan. Envía tu idea, tamaño aproximado y zona para solicitar disponibilidad.</p>
           <p>Artista independiente en NYC · Artista residente en Gara Art Studio · Solo con cita</p>
@@ -86,7 +86,7 @@ const routes = [
   {
     path: 'es',
     lang: 'es',
-    title: 'Tatuador de Anime en NYC | Línea Fina y Microrealismo | Hans',
+    title: 'Hansttoo | Tatuajes Anime, Línea Fina y Microrealismo NYC',
     description: 'Solicita una consulta con Hans para un tatuaje personalizado de anime, manga, microrealismo o línea fina en Gara Art Studio, Midtown Manhattan.',
     canonical: 'https://hansttoo.vercel.app/es',
     alternateEn: 'https://hansttoo.vercel.app/',

@@ -8,7 +8,7 @@ interface HeroProps {
 
 const copy = {
   en: {
-    eyebrow: 'HANS | NYC TATTOO ARTIST',
+    eyebrow: 'HANSTTOO | HANS | NYC TATTOO ARTIST',
     title: 'Custom Anime, Microrealism & Fine Line Tattoos',
     body: 'Custom tattoos by Hans at Gara Art Studio in Midtown Manhattan. Send your idea, approximate size and placement to request availability.',
     primary: 'REQUEST A CONSULTATION',
@@ -19,7 +19,7 @@ const copy = {
     styles: ['Anime', 'Microrealism', 'Fine line'],
   },
   es: {
-    eyebrow: 'HANS | ARTISTA DEL TATUAJE EN NYC',
+    eyebrow: 'HANSTTOO | HANS | ARTISTA DEL TATUAJE EN NYC',
     title: 'Tatuajes personalizados de anime, microrrealismo y línea fina',
     body: 'Tatuajes personalizados por Hans en Gara Art Studio, Midtown Manhattan. Envía tu idea, tamaño aproximado y zona para solicitar disponibilidad.',
     primary: 'SOLICITAR UNA CONSULTA',
