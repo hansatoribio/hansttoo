@@ -9,25 +9,23 @@ interface HeroProps {
 const copy = {
   en: {
     eyebrow: 'HANSTTOO | HANS | NYC TATTOO ARTIST',
-    title: 'Custom Anime, Microrealism & Fine Line Tattoos',
-    body: 'Custom tattoos by Hans at Gara Art Studio in Midtown Manhattan. Send your idea, approximate size and placement to request availability.',
+    title: 'Custom Tattoos in NYC',
+    body: 'Anime, microrealism, and fine line work by Hans in Midtown Manhattan. Tell me your idea and I’ll personally reply with fit, availability, and next steps.',
     primary: 'REQUEST A CONSULTATION',
     secondary: 'VIEW REAL WORK',
     trust: 'By appointment only · 240 W 40th St · Manhattan',
-    resident: 'Independent tattoo artist · Resident artist at Gara Art Studio',
-    city: '@HANSTTOO · NEW YORK CITY',
-    styles: ['Anime', 'Microrealism', 'Fine line'],
+    realWork: 'REAL WORK BY HANS',
+    galleryLabel: 'Selected tattoo work by Hans',
   },
   es: {
     eyebrow: 'HANSTTOO | HANS | ARTISTA DEL TATUAJE EN NYC',
-    title: 'Tatuajes personalizados de anime, microrrealismo y línea fina',
-    body: 'Tatuajes personalizados por Hans en Gara Art Studio, Midtown Manhattan. Envía tu idea, tamaño aproximado y zona para solicitar disponibilidad.',
+    title: 'Tatuajes personalizados en NYC',
+    body: 'Anime, microrrealismo y línea fina por Hans en Midtown Manhattan. Cuéntame tu idea y te responderé personalmente con disponibilidad y próximos pasos.',
     primary: 'SOLICITAR UNA CONSULTA',
     secondary: 'VER TRABAJO REAL',
     trust: 'Solo con cita · 240 W 40th St · Manhattan',
-    resident: 'Artista independiente · Artista residente en Gara Art Studio',
-    city: '@HANSTTOO · NUEVA YORK',
-    styles: ['Anime', 'Microrrealismo', 'Línea fina'],
+    realWork: 'TRABAJO REAL DE HANS',
+    galleryLabel: 'Selección de tatuajes realizados por Hans',
   },
 };
 
@@ -54,17 +52,19 @@ export default function Hero({ language, onNavigate }: HeroProps) {
           <p className="mt-6 flex items-center text-sm font-bold text-stone-700"><MapPin className="mr-2 h-4 w-4 text-[#C9362B]" aria-hidden="true" />{t.trust}</p>
         </div>
 
-        <div className="relative hidden min-h-[560px] min-w-0 overflow-hidden rounded-[2.25rem] border border-stone-300 bg-stone-950 p-8 text-white lg:flex lg:flex-col lg:justify-between">
-          <div className="absolute -right-20 -top-16 h-72 w-72 rounded-full border border-white/10" />
-          <div className="absolute -bottom-24 -left-16 h-80 w-80 rounded-full border border-white/10" />
-          <p className="relative font-mono text-xs tracking-[0.2em] text-stone-400">{t.city}</p>
-          <div className="relative">
-            <p className="text-[6rem] font-black leading-none tracking-[-0.09em]">H.</p>
-            <p className="mt-5 max-w-xs text-sm leading-6 text-stone-300">{t.resident}</p>
+        <div className="relative min-w-0" aria-label={t.galleryLabel}>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <figure className="relative row-span-2 min-h-[340px] overflow-hidden rounded-[2rem] bg-stone-200 sm:min-h-[520px]">
+              <img src="/portfolio/anime-my-hero-tattoo-nyc.webp" alt="Anime tattoo created by Hans in NYC" className="h-full w-full object-cover" width="900" height="1200" loading="eager" fetchPriority="high" decoding="async" />
+            </figure>
+            <figure className="relative min-h-[164px] overflow-hidden rounded-[1.5rem] bg-stone-200 sm:min-h-[252px]">
+              <img src="/portfolio/microrealism-empire-state-tattoo-nyc.webp" alt="Empire State microrealism tattoo created by Hans in NYC" className="h-full w-full object-cover" width="900" height="900" loading="eager" decoding="async" />
+            </figure>
+            <figure className="relative min-h-[164px] overflow-hidden rounded-[1.5rem] bg-stone-200 sm:min-h-[252px]">
+              <img src="/portfolio/fine-line-hummingbird-tattoo-nyc.webp" alt="Fine line hummingbird tattoo created by Hans in NYC" className="h-full w-full object-cover" width="900" height="900" loading="eager" decoding="async" />
+            </figure>
           </div>
-          <div className="relative grid grid-cols-3 gap-2 text-[9px] font-black uppercase xl:text-[10px]">
-            {t.styles.map((style) => <span key={style} className="min-w-0 whitespace-nowrap rounded-full border border-white/15 px-2 py-2 text-center tracking-normal xl:tracking-wider">{style}</span>)}
-          </div>
+          <p className="absolute bottom-4 left-4 rounded-full bg-stone-950/90 px-4 py-2 text-[10px] font-black tracking-[0.16em] text-white backdrop-blur sm:text-xs">{t.realWork}</p>
         </div>
       </div>
     </section>

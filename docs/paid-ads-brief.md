@@ -36,6 +36,16 @@ Initial negative keyword themes:
 
 - free, apprenticeship, course, school, classes, jobs, salary
 - supplies, machine, temporary tattoo, removal
+- competitor/name searches observed in the live search-term report: `live by the sword`, `igla`, `isol`, `noble art`
+- Add competitor names as phrase-match negatives only after verifying the query is a business/artist search, not a style query.
+
+Responsive search ad assets for the controlled test:
+
+- Headlines: `NYC Tattoo Artist`, `Custom Tattoos in Midtown`, `Anime Tattoo Artist NYC`, `Fine Line Tattoo Artist NYC`, `Microrealism Tattoos NYC`, `Tattoo Consultations NYC`, `Tattoo Artist Near Times Sq`, `Real Work by Hans NYC`, `Custom Tattoo Design NYC`, `Anime & Manga Tattoos NYC`, `Fine Line Tattoos Manhattan`, `Midtown Manhattan Tattoo`, `Request Tattoo Availability`, `Small Detailed Tattoos NYC`, `Book Tattoo Consultation`.
+- Descriptions: `Send your idea, size and placement. Hans replies personally with fit and availability.`; `Custom anime, microrealism and fine line tattoos in Midtown Manhattan by appointment.`; `View real tattoo work by Hans and request a consultation online. References are optional.`; `Planning a tattoo in NYC? Share the essentials and get clear next steps from Hans.`
+- Callouts: `Real Portfolio`, `Midtown Manhattan`, `English & Spanish`, `Custom Designs`, `By Appointment`, `Personal Reply`.
+- Structured snippet, Styles: `Anime & Manga`, `Microrealism`, `Fine Line`, `Black & Grey`.
+- Sitelinks: `View Real Work` → `/#portfolio`; `Meet Hans` → `/#about`; `Request Consultation` → `/#booking`; `Midtown Location` → `/#location`.
 
 Truthful message direction:
 
@@ -56,6 +66,15 @@ Do not use “studio owner,” “private studio,” “best tattoo artist,” g
 - Measure messaging conversations started, qualified conversations, booked appointments, and deposits. Do not optimize or report this campaign using website page views, website Pixel `Lead`, or website form submissions.
 - The website's Meta Pixel may remain available for consented website analytics or a separately approved future retargeting test, but it is not the conversion source for the Instagram Direct campaign.
 
+Current-campaign correction prepared on 2026-08-31:
+
+- The active 9-second creative produced 2 attributed conversations from $29.52 spend, with $14.76 per attributed conversation. Meta reported this cost as 4,820% above similar ad sets.
+- The video averaged 2 seconds of watch time, with an 18% initial hook rate and only 4.28% reaching 9 seconds. The first creative therefore needs replacement; copy or audience changes alone will not repair retention.
+- The ad-set draft uses strict audience controls, retains the local 15-mile radius around 240 W 40th St, and sets age to **18–45**. It remains unpublished until final approval.
+- Next creative should show the strongest finished tattoo in the first frame, use a clear `NYC — YOUR NEXT TATTOO?` hook, show 2–3 close details, and end with `DM YOUR IDEA · MIDTOWN MANHATTAN`. Avoid logo-only or slow-intro frames.
+- Suggested primary text: `NYC — ready for a custom tattoo? Anime, microrealism and fine line work by Hans in Midtown Manhattan. Send your idea for availability.`
+- Keep the first quick-reply question qualifying: `What tattoo idea or style do you want?` Then ask size, placement, and whether the person can attend in Midtown.
+
 ## Conversion and lead-quality measurement
 
 For Google Search, the website now stores only allow-listed attribution fields with a submitted lead: source, medium, campaign, content, search term, landing path, and supported click identifiers. Full referrer URLs and arbitrary query parameters are not stored. The admin panel shows readable campaign context while hiding raw click-ID values. Meta Direct leads remain inside Instagram and must be qualified and counted from the messaging workflow; they will not automatically appear in the website admin panel.
@@ -69,7 +88,7 @@ Primary operational metrics:
 
 ## Still required before activation
 
-- Google Ads destination ID (`AW-...`) and conversion label, or a tested Google Ads conversion tag inside the existing GTM container.
+- The Google Ads account already imports the primary GA4 `generate_lead` action and the live site loads GA4 measurement ID `G-262SJYL139` through the existing Google stack. The remaining requirement is a real end-to-end test proving that one successful consultation submission produces exactly one GA4 event and one imported Google Ads conversion.
 - A real Google Ads account owned and verified by Hans, with billing and advertiser verification completed through Google's official interface.
 - Final daily budget and geographic targeting decision.
 - Tag Assistant test proving exactly one Google lead conversion per confirmed form submission.

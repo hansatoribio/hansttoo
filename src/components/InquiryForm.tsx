@@ -1,5 +1,5 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, Check, CheckCircle2, ChevronDown, ImagePlus, Loader2, LockKeyhole, Search, Trash2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight, Check, CheckCircle2, ChevronDown, ImagePlus, Loader2, LockKeyhole, Search, Trash2 } from 'lucide-react';
 import { Inquiry, Language, TattooStyle } from '../types';
 
 interface InquiryFormProps {
@@ -90,6 +90,10 @@ const copy = {
     contactMethods: { email: 'Email', instagram: 'Instagram', whatsapp: 'WhatsApp' },
     styles: { anime: 'Anime / Manga', microrealism: 'Microrealism', fineline: 'Fine Line' },
     inches: 'inches',
+    stepOne: 'YOUR IDEA',
+    stepTwo: 'PROJECT DETAILS',
+    continue: 'CONTINUE',
+    back: 'BACK',
   },
   es: {
     eyebrow: 'SOLICITUD DE CONSULTA',
@@ -120,6 +124,10 @@ const copy = {
     contactMethods: { email: 'Correo', instagram: 'Instagram', whatsapp: 'WhatsApp' },
     styles: { anime: 'Anime / Manga', microrealism: 'Microrrealismo', fineline: 'Línea fina' },
     inches: 'pulgadas',
+    stepOne: 'TU IDEA',
+    stepTwo: 'DETALLES DEL PROYECTO',
+    continue: 'CONTINUAR',
+    back: 'ATRÁS',
   },
 };
 
@@ -291,7 +299,7 @@ export default function InquiryForm({ language, preselectedStyle, onInquirySubmi
   const [instagram, setInstagram] = useState('');
   const [phone, setPhone] = useState('');
   const [country, setCountry] = useState<CountryCode>(() => countryCodes.find((item) => item.code === localeCountryCode()) || countryCodes[0]);
-  const [preferredContactMethod, setPreferredContactMethod] = useState<ContactMethod>('email');
+  const [preferredContactMethod, setPreferredContactMethod] = useState<ContactMethod>('instagram');
   const [style, setStyle] = useState<TattooStyle>('anime');
   const [sizeInches, setSizeInches] = useState('4');
   const [placement, setPlacement] = useState('');
@@ -302,6 +310,7 @@ export default function InquiryForm({ language, preselectedStyle, onInquirySubmi
   const [errors, setErrors] = useState<FormErrors>({});
   const [serverError, setServerError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
 
   useEffect(() => {
     if (preselectedStyle) setStyle(preselectedStyle);
@@ -360,7 +369,7 @@ export default function InquiryForm({ language, preselectedStyle, onInquirySubmi
     }
   };
 
-  const validate = () => {
+  const stepOneErrors = () => {
     const next: FormErrors = {};
     if (!fullName.trim()) next.fullName = language === 'en' ? 'Enter your name.' : 'Escribe tu nombre.';
     if (preferredContactMethod === 'email' && !email.trim()) next.email = language === 'en' ? 'Email is required for your selected contact method.' : 'El correo es obligatorio para el método elegido.';
@@ -370,6 +379,24 @@ export default function InquiryForm({ language, preselectedStyle, onInquirySubmi
     const whatsAppDigitCount = phoneE164.replace(/\D/g, '').length;
     if (preferredContactMethod === 'whatsapp' && !phone.trim()) next.phone = language === 'en' ? 'WhatsApp is required for your selected contact method.' : 'WhatsApp es obligatorio para el método elegido.';
     else if (phone.trim() && (whatsAppDigitCount < 7 || whatsAppDigitCount > 15)) next.phone = language === 'en' ? 'Enter a valid WhatsApp number.' : 'Escribe un número de WhatsApp válido.';
+    if (description.trim().length < 15) next.description = language === 'en' ? 'Describe your idea in at least 15 characters.' : 'Describe tu idea con al menos 15 caracteres.';
+    return next;
+  };
+
+  const continueToDetails = () => {
+    const next = stepOneErrors();
+    setErrors(next);
+    setServerError('');
+    if (Object.keys(next).length) {
+      window.setTimeout(() => errorSummaryRef.current?.focus(), 0);
+      return;
+    }
+    setCurrentStep(2);
+    window.setTimeout(() => document.getElementById('booking-form-step')?.focus(), 0);
+  };
+
+  const validate = () => {
+    const next: FormErrors = stepOneErrors();
     if (!placement.trim()) next.placement = language === 'en' ? 'Enter the placement.' : 'Escribe la zona.';
     if (!sizeCm || sizeCm < 1.3 || sizeCm > 127) next.size = language === 'en' ? 'Enter a size from 0.5 to 50 inches.' : 'Escribe un tamaño entre 0.5 y 50 pulgadas.';
     if (description.trim().length < 15) next.description = language === 'en' ? 'Describe your idea in at least 15 characters.' : 'Describe tu idea con al menos 15 caracteres.';
@@ -387,6 +414,7 @@ export default function InquiryForm({ language, preselectedStyle, onInquirySubmi
     event.preventDefault();
     setServerError('');
     if (!validate()) {
+      if (Object.keys(stepOneErrors()).length) setCurrentStep(1);
       window.setTimeout(() => errorSummaryRef.current?.focus(), 0);
       return;
     }
@@ -440,105 +468,118 @@ export default function InquiryForm({ language, preselectedStyle, onInquirySubmi
             </div>
           ) : null}
 
-          <div className="grid gap-6 sm:grid-cols-2">
-            <label className="block text-sm font-black" htmlFor="full-name">{t.name} <span className="text-[#C9362B]">*</span>
-              <input id="full-name" autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} className={inputClass} aria-invalid={Boolean(errors.fullName)} aria-describedby={errors.fullName ? 'fullName-error' : undefined} />
-              {fieldError('fullName')}
-            </label>
-            <label className="block text-sm font-black" htmlFor="email">{t.email} {preferredContactMethod === 'email' ? <span className="text-[#C9362B]">*</span> : null}
-              <input id="email" type="email" inputMode="email" autoComplete="email" required={preferredContactMethod === 'email'} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className={inputClass} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'email-error' : undefined} />
-              {fieldError('email')}
-            </label>
-            <label className="block text-sm font-black" htmlFor="instagram">{t.instagram} {preferredContactMethod === 'instagram' ? <span className="text-[#C9362B]">*</span> : null}
-              <input id="instagram" autoComplete="off" required={preferredContactMethod === 'instagram'} value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="@yourusername" className={inputClass} aria-invalid={Boolean(errors.instagram)} aria-describedby={errors.instagram ? 'instagram-error' : undefined} />
-              {fieldError('instagram')}
-            </label>
-            <div className="block text-sm font-black">
-              <span>{t.phone} {preferredContactMethod === 'whatsapp' ? <span className="text-[#C9362B]">*</span> : null}</span>
-              <div className="grid grid-cols-[8.5rem_minmax(0,1fr)] gap-2">
-                <CountryCodePicker language={language} value={country} onChange={setCountry} />
-                <label className="block" htmlFor="phone">
-                  <span className="sr-only">{language === 'en' ? 'WhatsApp number' : 'Número de WhatsApp'}</span>
-                  <input id="phone" type="tel" inputMode="tel" autoComplete="tel-national" required={preferredContactMethod === 'whatsapp'} value={phone} onChange={(event) => handleWhatsAppChange(event.target.value)} placeholder="212 555 0123" className={inputClass} aria-invalid={Boolean(errors.phone)} aria-describedby={errors.phone ? 'phone-error' : 'whatsapp-help'} />
+          <div id="booking-form-step" tabIndex={-1} className="outline-none">
+            <div className="mb-8 flex items-center gap-3" aria-label={language === 'en' ? `Step ${currentStep} of 2` : `Paso ${currentStep} de 2`}>
+              <span className="font-mono text-xs font-black text-[#C9362B]">0{currentStep} / 02</span>
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-stone-200"><div className={`h-full rounded-full bg-[#E53E3E] transition-all ${currentStep === 1 ? 'w-1/2' : 'w-full'}`} /></div>
+              <span className="text-xs font-black tracking-wider text-stone-600">{currentStep === 1 ? t.stepOne : t.stepTwo}</span>
+            </div>
+
+            {currentStep === 1 ? (
+              <div>
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <label className="block text-sm font-black" htmlFor="full-name">{t.name} <span className="text-[#C9362B]">*</span>
+                    <input id="full-name" autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} className={inputClass} aria-invalid={Boolean(errors.fullName)} aria-describedby={errors.fullName ? 'fullName-error' : undefined} />
+                    {fieldError('fullName')}
+                  </label>
+                  <div className="block text-sm font-black">
+                    <span id="style-label">{t.style} <span className="text-[#C9362B]">*</span></span>
+                    <StylePicker language={language} value={style} onChange={setStyle} />
+                  </div>
+                </div>
+
+                <fieldset className="mt-6">
+                  <legend className="text-sm font-black">{t.contact} <span className="text-[#C9362B]">*</span></legend>
+                  <p className="mt-1 text-sm text-stone-500">{t.contactHelp}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {(['instagram', 'whatsapp', 'email'] as ContactMethod[]).map((method) => (
+                      <label key={method} className={'cursor-pointer rounded-full border px-4 py-2 text-sm font-bold ' + (preferredContactMethod === method ? 'border-stone-950 bg-stone-950 text-white' : 'border-stone-300 bg-white text-stone-700')}>
+                        <input type="radio" className="sr-only" name="preferred-contact" value={method} checked={preferredContactMethod === method} onChange={() => setPreferredContactMethod(method)} />
+                        {t.contactMethods[method]}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+
+                <div className="mt-6">
+                  {preferredContactMethod === 'instagram' ? (
+                    <label className="block text-sm font-black" htmlFor="instagram">{t.instagram} <span className="text-[#C9362B]">*</span>
+                      <input id="instagram" autoComplete="off" required value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="@yourusername" className={inputClass} aria-invalid={Boolean(errors.instagram)} aria-describedby={errors.instagram ? 'instagram-error' : undefined} />
+                      {fieldError('instagram')}
+                    </label>
+                  ) : null}
+                  {preferredContactMethod === 'email' ? (
+                    <label className="block text-sm font-black" htmlFor="email">{t.email} <span className="text-[#C9362B]">*</span>
+                      <input id="email" type="email" inputMode="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className={inputClass} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'email-error' : undefined} />
+                      {fieldError('email')}
+                    </label>
+                  ) : null}
+                  {preferredContactMethod === 'whatsapp' ? (
+                    <div className="block text-sm font-black">
+                      <span>{t.phone} <span className="text-[#C9362B]">*</span></span>
+                      <div className="grid grid-cols-[8.5rem_minmax(0,1fr)] gap-2">
+                        <CountryCodePicker language={language} value={country} onChange={setCountry} />
+                        <label className="block" htmlFor="phone"><span className="sr-only">{language === 'en' ? 'WhatsApp number' : 'Número de WhatsApp'}</span>
+                          <input id="phone" type="tel" inputMode="tel" autoComplete="tel-national" required value={phone} onChange={(event) => handleWhatsAppChange(event.target.value)} placeholder="212 555 0123" className={inputClass} aria-invalid={Boolean(errors.phone)} aria-describedby={errors.phone ? 'phone-error' : 'whatsapp-help'} />
+                        </label>
+                      </div>
+                      <p id="whatsapp-help" className="mt-2 text-xs font-normal text-stone-500">{language === 'en' ? 'Paste an international number to detect its country code.' : 'Pega un número internacional para detectar su código de país.'}</p>
+                      {fieldError('phone')}
+                    </div>
+                  ) : null}
+                </div>
+
+                <label className="mt-6 block text-sm font-black" htmlFor="description">{t.idea} <span className="text-[#C9362B]">*</span>
+                  <textarea id="description" rows={5} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={language === 'en' ? 'Describe the subject, mood, details, and anything Hans should know.' : 'Describe el tema, ambiente, detalles y cualquier información importante.'} className={inputClass + ' py-3'} aria-invalid={Boolean(errors.description)} aria-describedby={errors.description ? 'description-error' : undefined} />
+                  {fieldError('description')}
                 </label>
+                <div className="mt-7 flex justify-end">
+                  <button type="button" onClick={continueToDetails} className="inline-flex min-h-14 items-center justify-center rounded-full bg-[#E53E3E] px-7 text-sm font-black tracking-wide text-white hover:bg-stone-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C9362B]">{t.continue}<ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" /></button>
+                </div>
               </div>
-              <p id="whatsapp-help" className="mt-2 text-xs font-normal text-stone-500">{language === 'en' ? 'Paste an international number to detect its country code.' : 'Pega un número internacional para detectar su código de país.'}</p>
-              {fieldError('phone')}
-            </div>
-          </div>
+            ) : (
+              <div>
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <label className="block text-sm font-black" htmlFor="size">{t.size} <span className="text-[#C9362B]">*</span>
+                    <div className="relative"><input id="size" type="number" min="0.5" max="50" step="0.25" inputMode="decimal" value={sizeInches} onChange={(e) => setSizeInches(e.target.value)} className={inputClass + ' pr-24'} aria-invalid={Boolean(errors.size)} aria-describedby="size-help" /><span className="pointer-events-none absolute right-4 top-[1.4rem] text-sm font-bold text-stone-500">{t.inches}</span></div>
+                    <p id="size-help" className="mt-2 text-xs text-stone-500">≈ {sizeCm || 0} cm</p>{fieldError('size')}
+                  </label>
+                  <label className="block text-sm font-black" htmlFor="placement">{t.placement} <span className="text-[#C9362B]">*</span>
+                    <input id="placement" value={placement} onChange={(e) => setPlacement(e.target.value)} placeholder={language === 'en' ? 'Example: inner forearm' : 'Ejemplo: antebrazo interno'} className={inputClass} aria-invalid={Boolean(errors.placement)} aria-describedby={errors.placement ? 'placement-error' : undefined} />{fieldError('placement')}
+                  </label>
+                </div>
 
-          <fieldset className="mt-6">
-            <legend className="text-sm font-black">{t.contact} <span className="text-[#C9362B]">*</span></legend>
-            <p className="mt-1 text-sm text-stone-500">{t.contactHelp}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {(['email', 'instagram', 'whatsapp'] as ContactMethod[]).map((method) => (
-                <label key={method} className={'cursor-pointer rounded-full border px-4 py-2 text-sm font-bold ' + (preferredContactMethod === method ? 'border-stone-950 bg-stone-950 text-white' : 'border-stone-300 bg-white text-stone-700')}>
-                  <input type="radio" className="sr-only" name="preferred-contact" value={method} checked={preferredContactMethod === method} onChange={() => setPreferredContactMethod(method)} />
-                  {t.contactMethods[method]}
+                <div className="mt-8">
+                  <label htmlFor="reference-images" className="text-sm font-black">{t.refs}</label>
+                  <p className="mt-1 text-sm text-stone-500">{t.refsHelp}</p>
+                  <label htmlFor="reference-images" className="mt-3 flex min-h-28 cursor-pointer items-center justify-center rounded-2xl border border-dashed border-stone-400 bg-stone-50 px-4 text-center text-sm font-bold text-stone-600 hover:border-stone-950 hover:bg-white"><ImagePlus className="mr-2 h-5 w-5" aria-hidden="true" />{language === 'en' ? 'Choose reference images' : 'Elegir imágenes de referencia'}</label>
+                  <input id="reference-images" type="file" className="sr-only" accept="image/jpeg,image/png,image/webp" multiple onChange={handleFiles} />
+                  {fieldError('images')}
+                  {referenceImages.length ? (
+                    <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5" aria-label={language === 'en' ? 'Selected reference images' : 'Imágenes seleccionadas'}>
+                      {referenceImages.map((image, index) => (
+                        <li key={image.slice(-32) + index} className="relative aspect-square overflow-hidden rounded-xl border border-stone-200 bg-stone-100"><img src={image} alt={language === 'en' ? 'Reference preview ' + (index + 1) : 'Vista previa ' + (index + 1)} className="h-full w-full object-cover" /><button type="button" onClick={() => setReferenceImages((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="absolute right-1 top-1 rounded-full bg-stone-950/85 p-2 text-white" aria-label={language === 'en' ? 'Remove reference image ' + (index + 1) : 'Eliminar imagen ' + (index + 1)}><Trash2 className="h-4 w-4" aria-hidden="true" /></button></li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+
+                <label className="mt-8 flex cursor-pointer items-start gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-4 text-sm leading-6 text-stone-700" htmlFor="consent">
+                  <input id="consent" type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-4 w-4 accent-stone-950" aria-invalid={Boolean(errors.consent)} aria-describedby={errors.consent ? 'consent-error' : undefined} />
+                  <span>{t.consent} <a href={language === 'es' ? '/es/privacy' : '/privacy'} className="font-black underline underline-offset-2">{t.privacy}</a>.</span>
                 </label>
-              ))}
-            </div>
-          </fieldset>
+                {fieldError('consent')}
 
-          <div className="mt-8 grid gap-6 sm:grid-cols-2">
-            <div className="block text-sm font-black">
-              <span id="style-label">{t.style} <span className="text-[#C9362B]">*</span></span>
-              <StylePicker language={language} value={style} onChange={setStyle} />
-            </div>
-            <label className="block text-sm font-black" htmlFor="size">{t.size} <span className="text-[#C9362B]">*</span>
-              <div className="relative">
-                <input id="size" type="number" min="0.5" max="50" step="0.25" inputMode="decimal" value={sizeInches} onChange={(e) => setSizeInches(e.target.value)} className={inputClass + ' pr-24'} aria-invalid={Boolean(errors.size)} aria-describedby="size-help" />
-                <span className="pointer-events-none absolute right-4 top-[1.4rem] text-sm font-bold text-stone-500">{t.inches}</span>
+                <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <button type="button" onClick={() => setCurrentStep(1)} className="inline-flex min-h-12 items-center justify-center rounded-full border border-stone-300 px-5 text-sm font-black text-stone-700 hover:border-stone-950"><ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />{t.back}</button>
+                  <button type="submit" disabled={isSubmitting} className="inline-flex min-h-14 items-center justify-center rounded-full bg-[#E53E3E] px-7 text-sm font-black tracking-wide text-white hover:bg-stone-950 disabled:cursor-wait disabled:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C9362B]">{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> : <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" />}{isSubmitting ? t.sending : t.submit}</button>
+                </div>
+                <p className="mt-4 inline-flex items-center text-xs text-stone-500"><LockKeyhole className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />{language === 'en' ? 'Your information is used to respond to this request.' : 'Tu información se usa para responder a esta solicitud.'}</p>
               </div>
-              <p id="size-help" className="mt-2 text-xs text-stone-500">≈ {sizeCm || 0} cm</p>
-              {fieldError('size')}
-            </label>
-            <label className="block text-sm font-black sm:col-span-2" htmlFor="placement">{t.placement} <span className="text-[#C9362B]">*</span>
-              <input id="placement" value={placement} onChange={(e) => setPlacement(e.target.value)} placeholder={language === 'en' ? 'Example: inner forearm' : 'Ejemplo: antebrazo interno'} className={inputClass} aria-invalid={Boolean(errors.placement)} aria-describedby={errors.placement ? 'placement-error' : undefined} />
-              {fieldError('placement')}
-            </label>
-            <label className="block text-sm font-black sm:col-span-2" htmlFor="description">{t.idea} <span className="text-[#C9362B]">*</span>
-              <textarea id="description" rows={5} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={language === 'en' ? 'Describe the subject, mood, details, and anything Hans should know.' : 'Describe el tema, ambiente, detalles y cualquier información importante.'} className={inputClass + ' py-3'} aria-invalid={Boolean(errors.description)} aria-describedby={errors.description ? 'description-error' : undefined} />
-              {fieldError('description')}
-            </label>
-          </div>
-
-          <div className="mt-8">
-            <label htmlFor="reference-images" className="text-sm font-black">{t.refs}</label>
-            <p className="mt-1 text-sm text-stone-500">{t.refsHelp}</p>
-            <label htmlFor="reference-images" className="mt-3 flex min-h-28 cursor-pointer items-center justify-center rounded-2xl border border-dashed border-stone-400 bg-stone-50 px-4 text-center text-sm font-bold text-stone-600 hover:border-stone-950 hover:bg-white">
-              <ImagePlus className="mr-2 h-5 w-5" aria-hidden="true" />
-              {language === 'en' ? 'Choose reference images' : 'Elegir imágenes de referencia'}
-            </label>
-            <input id="reference-images" type="file" className="sr-only" accept="image/jpeg,image/png,image/webp" multiple onChange={handleFiles} />
-            {fieldError('images')}
-            {referenceImages.length ? (
-              <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5" aria-label={language === 'en' ? 'Selected reference images' : 'Imágenes seleccionadas'}>
-                {referenceImages.map((image, index) => (
-                  <li key={image.slice(-32) + index} className="relative aspect-square overflow-hidden rounded-xl border border-stone-200 bg-stone-100">
-                    <img src={image} alt={language === 'en' ? 'Reference preview ' + (index + 1) : 'Vista previa ' + (index + 1)} className="h-full w-full object-cover" />
-                    <button type="button" onClick={() => setReferenceImages((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="absolute right-1 top-1 rounded-full bg-stone-950/85 p-2 text-white" aria-label={language === 'en' ? 'Remove reference image ' + (index + 1) : 'Eliminar imagen ' + (index + 1)}><Trash2 className="h-4 w-4" aria-hidden="true" /></button>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
+            )}
           </div>
 
           <input type="text" name="website" tabIndex={-1} autoComplete="off" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} hidden aria-hidden="true" />
-
-          <label className="mt-8 flex cursor-pointer items-start gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-4 text-sm leading-6 text-stone-700" htmlFor="consent">
-            <input id="consent" type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-4 w-4 accent-stone-950" aria-invalid={Boolean(errors.consent)} aria-describedby={errors.consent ? 'consent-error' : undefined} />
-            <span>{t.consent} <a href={language === 'es' ? '/es/privacy' : '/privacy'} className="font-black underline underline-offset-2">{t.privacy}</a>.</span>
-          </label>
-          {fieldError('consent')}
-
-          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="inline-flex items-center text-xs text-stone-500"><LockKeyhole className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />{language === 'en' ? 'Your information is used to respond to this request.' : 'Tu información se usa para responder a esta solicitud.'}</p>
-            <button type="submit" disabled={isSubmitting} className="inline-flex min-h-14 items-center justify-center rounded-full bg-[#E53E3E] px-7 text-sm font-black tracking-wide text-white hover:bg-stone-950 disabled:cursor-wait disabled:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C9362B]">
-              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> : <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" />}
-              {isSubmitting ? t.sending : t.submit}
-            </button>
-          </div>
           <div className="sr-only" aria-live="polite">{isSubmitting ? t.sending : ''}</div>
         </form>
       </div>

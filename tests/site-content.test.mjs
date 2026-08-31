@@ -166,6 +166,17 @@ test('mobile hero uses content height instead of forcing a full viewport', async
   const hero = await readFile('src/components/Hero.tsx', 'utf8');
   assert.match(hero, /sm:min-h-\[calc\(100svh-4rem\)\]/);
   assert.doesNotMatch(hero, /grid min-h-\[calc\(100svh-4rem\)\]/);
+  assert.match(hero, /REAL WORK BY HANS/);
+  assert.match(hero, /loading="eager" fetchPriority="high"/);
+});
+
+test('consultation form reduces initial friction with a two-step Instagram-first flow', async () => {
+  const form = await readFile('src/components/InquiryForm.tsx', 'utf8');
+  assert.match(form, /useState<ContactMethod>\('instagram'\)/);
+  assert.match(form, /useState<1 \| 2>\(1\)/);
+  assert.match(form, /continueToDetails/);
+  assert.match(form, /currentStep === 1/);
+  assert.match(form, /preferredContactMethod === 'instagram' \?/);
 });
 
 test('portfolio uses verified local WebP images with accessible loading hints', async () => {
