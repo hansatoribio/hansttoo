@@ -9,8 +9,8 @@ interface AboutArtistProps {
 const copy = {
   en: {
     eyebrow: 'INDEPENDENT NYC TATTOO ARTIST',
-    title: 'Meet Hans',
-    body: 'Hans is an independent tattoo artist and resident artist at Gara Art Studio in Midtown Manhattan. His consultation process centers on the client’s idea, the placement, and a design direction suited to the requested style.',
+    title: 'Meet Hans Toribio',
+    body: 'Hans Toribio, known as Hansttoo, is an independent tattoo artist and resident artist at Gara Art Studio in Midtown Manhattan. His consultation process centers on the client’s idea, the placement, and a design direction suited to the requested style.',
     resident: 'Resident artist at Gara Art Studio',
     location: 'Appointments at 240 W 40th St, New York, NY 10018',
     craft: 'Custom anime and manga, microrealism, and fine-line work',
@@ -19,8 +19,8 @@ const copy = {
   },
   es: {
     eyebrow: 'ARTISTA DEL TATUAJE INDEPENDIENTE EN NYC',
-    title: 'Conoce a Hans',
-    body: 'Hans es un artista del tatuaje independiente y artista residente en Gara Art Studio, Midtown Manhattan. Su proceso de consulta se centra en la idea del cliente, la zona y una dirección de diseño adecuada al estilo solicitado.',
+    title: 'Conoce a Hans Toribio',
+    body: 'Hans Toribio, conocido como Hansttoo, es un tatuador independiente y artista residente en Gara Art Studio, Midtown Manhattan. Su proceso de consulta se centra en la idea del cliente, la zona y una dirección de diseño adecuada al estilo solicitado.',
     resident: 'Artista residente en Gara Art Studio',
     location: 'Citas en 240 W 40th St, New York, NY 10018',
     craft: 'Anime y manga personalizado, microrrealismo y línea fina',

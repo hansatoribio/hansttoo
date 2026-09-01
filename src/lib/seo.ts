@@ -7,8 +7,8 @@ type PageKind = 'home' | 'privacy' | 'thank-you' | 'admin';
 const metadata: Record<Language, Record<PageKind, { title: string; description: string }>> = {
   en: {
     home: {
-      title: 'Hansttoo | Anime, Fine Line & Microrealism Tattoos NYC',
-      description: 'Request a custom anime, manga, microrealism, or fine-line tattoo consultation with Hans at Gara Art Studio in Midtown Manhattan, New York City.',
+      title: 'Hans Toribio (Hansttoo) | Tattoo Artist NYC',
+      description: 'Book a custom anime, manga, microrealism, or fine-line tattoo consultation with NYC tattoo artist Hans Toribio, known as Hansttoo, in Midtown Manhattan.',
     },
     privacy: {
       title: 'Privacy Policy | Hans | NYC Tattoo Artist',
@@ -25,8 +25,8 @@ const metadata: Record<Language, Record<PageKind, { title: string; description: 
   },
   es: {
     home: {
-      title: 'Hansttoo | Tatuajes Anime, Línea Fina y Microrealismo NYC',
-      description: 'Solicita una consulta con Hans para un tatuaje personalizado de anime, manga, microrealismo o línea fina en Gara Art Studio, Midtown Manhattan.',
+      title: 'Hans Toribio (Hansttoo) | Tatuador en NYC',
+      description: 'Solicita una consulta con el tatuador de NYC Hans Toribio, conocido como Hansttoo, para un tatuaje de anime, manga, microrealismo o línea fina en Midtown Manhattan.',
     },
     privacy: {
       title: 'Política de Privacidad | Hans | Tatuador en NYC',
